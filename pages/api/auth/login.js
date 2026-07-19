@@ -21,9 +21,11 @@ export default async function handler(req, res) {
     
     // Set HTTP-only cookie
     setTokenCookie(res, result.token);
+    console.log(res.getHeader('Set-Cookie'));
 
     // Set CSRF cookie (readable by JavaScript for double-submit pattern)
     setCsrfCookie(res, generateCsrfToken());
+    console.log(res.getHeader('Set-Cookie'));
     
     return successResponse(res, result, 'Login successful');
   } catch (error) {
