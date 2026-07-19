@@ -8,8 +8,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    removeTokenCookie(res);
-    clearCsrfCookie(res);
+    const authCookie = removeTokenCookie();
+    const csrfCookie = clearCsrfCookie();
+
+    res.setHeader('Set-Cookie', [authCookie, csrfCookie]);
+    
     return successResponse(res, null, 'Logged out successfully');
   } catch (error) {
     console.error('Logout error:', error);

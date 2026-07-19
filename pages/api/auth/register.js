@@ -19,11 +19,10 @@ export default async function handler(req, res) {
     const { name, email, password } = validation.data;
     const result = await AuthService.register({ name, email, password });
     
-    // Set HTTP-only cookie
-    setTokenCookie(res, result.token);
+    const authCookie = setTokenCookie(result.token);
+    const csrfCookie = setCsrfCookie(generateCsrfToken());
 
-    // Set CSRF cookie (readable by JavaScript for double-submit pattern)
-    setCsrfCookie(res, generateCsrfToken());
+    res.setHeader('Set-Cookie', [authCookie, csrfCookie]);
     
     return successResponse(res, result, 'Registration successful', 201);
   } catch (error) {

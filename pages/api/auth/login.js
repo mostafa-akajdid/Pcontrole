@@ -19,13 +19,10 @@ export default async function handler(req, res) {
     const { email, password } = validation.data;
     const result = await AuthService.login({ email, password });
     
-    // Set HTTP-only cookie
-    setTokenCookie(res, result.token);
-    console.log(res.getHeader('Set-Cookie'));
+    const authCookie = setTokenCookie(result.token);
+    const csrfCookie = setCsrfCookie(generateCsrfToken());
 
-    // Set CSRF cookie (readable by JavaScript for double-submit pattern)
-    setCsrfCookie(res, generateCsrfToken());
-    console.log(res.getHeader('Set-Cookie'));
+    res.setHeader('Set-Cookie', [authCookie, csrfCookie]);
     
     return successResponse(res, result, 'Login successful');
   } catch (error) {
