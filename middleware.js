@@ -15,6 +15,10 @@ const API_PUBLIC_ROUTES = [
   '/api/auth/reset-password',
 ];
 
+const CSRF_COOKIE_NAME = 'csrf_token';
+const CSRF_HEADER_NAME = 'x-csrf-token';
+const STATE_CHANGING_METHODS = ['POST', 'PUT', 'DELETE', 'PATCH'];
+
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_SECRET_KEY = JWT_SECRET ? new TextEncoder().encode(JWT_SECRET) : null;
 
@@ -34,6 +38,13 @@ function parseCookies(cookieHeader) {
     cookies[key.trim()] = rest.join('=').trim();
   });
   return cookies;
+}
+
+function validateCsrf(req, cookies) {
+  const cookieToken = cookies[CSRF_COOKIE_NAME];
+  const headerToken = req.headers.get(CSRF_HEADER_NAME);
+  if (!cookieToken || !headerToken) return false;
+  return cookieToken === headerToken;
 }
 
 export async function middleware(req) {
@@ -95,6 +106,18 @@ export async function middleware(req) {
     const url = req.nextUrl.clone();
     url.pathname = '/';
     return NextResponse.redirect(url);
+  }
+
+  if (
+    pathname.startsWith('/api/') &&
+    STATE_CHANGING_METHODS.includes(req.method)
+  ) {
+    if (!validateCsrf(req, cookies)) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid CSRF token' },
+        { status: 403 }
+      );
+    }
   }
 
   return NextResponse.next();

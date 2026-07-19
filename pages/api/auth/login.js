@@ -2,6 +2,7 @@ import { AuthService } from '@/lib/services';
 import { validateRequest, loginSchema } from '@/lib/validation';
 import { successResponse, errorResponse, methodNotAllowed } from '@/lib/api';
 import { setTokenCookie } from '@/lib/auth';
+import { generateCsrfToken, setCsrfCookie } from '@/lib/csrf';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -20,6 +21,9 @@ export default async function handler(req, res) {
     
     // Set HTTP-only cookie
     setTokenCookie(res, result.token);
+
+    // Set CSRF cookie (readable by JavaScript for double-submit pattern)
+    setCsrfCookie(res, generateCsrfToken());
     
     return successResponse(res, result, 'Login successful');
   } catch (error) {

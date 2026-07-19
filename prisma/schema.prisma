@@ -92,6 +92,8 @@ model User {
 
   @@index([deletedAt])
   @@index([status, roleId])
+  @@index([resetToken])
+  @@index([verificationToken])
   @@map("users")
 }
 
@@ -361,5 +363,7 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([action])
   @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([module, createdAt])
   @@map("audit_logs")
 }
