@@ -1,27 +1,32 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Calendar, Users, Tag, AlertCircle } from 'lucide-react';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
+
+const INITIAL_PROJECT_DATA = {
+  name: '',
+  description: '',
+  startDate: '',
+  endDate: '',
+  priority: 'medium',
+  status: 'planning',
+  team: [],
+  tags: '',
+};
 
 export default function AddProjectModal({ isOpen, onClose, onSubmit }) {
-  const [isClosing, setIsClosing] = useState(false);
-  const [projectData, setProjectData] = useState({
-    name: '',
-    description: '',
-    startDate: '',
-    endDate: '',
-    priority: 'medium',
-    status: 'planning',
-    team: [],
-    tags: '',
+  const [projectData, setProjectData] = useState(INITIAL_PROJECT_DATA);
+
+  const { isClosing, handleClose, shouldRender } = useModalAnimation(isOpen, {
+    delay: 400,
+    onClose: useCallback(() => { onClose(); setProjectData(INITIAL_PROJECT_DATA); }, [onClose]),
   });
 
   useEffect(() => {
     if (isOpen) {
-      setIsClosing(false);
-      // Prevent body scroll when modal is open
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -38,27 +43,7 @@ export default function AddProjectModal({ isOpen, onClose, onSubmit }) {
     handleClose();
   };
 
-  const handleClose = () => {
-    setIsClosing(true);
-    // Wait for animation to complete before actually closing
-    setTimeout(() => {
-      onClose();
-      setIsClosing(false);
-      // Reset form after close
-      setProjectData({
-        name: '',
-        description: '',
-        startDate: '',
-        endDate: '',
-        priority: 'medium',
-        status: 'planning',
-        team: [],
-        tags: '',
-      });
-    }, 400); // Match animation duration
-  };
-
-  if (!isOpen && !isClosing) return null;
+  if (!shouldRender) return null;
 
   return (
     <>

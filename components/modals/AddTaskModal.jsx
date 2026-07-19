@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Calendar, Users, AlertCircle, FileText } from 'lucide-react';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 
 export default function AddTaskModal({ isOpen, onClose, onSubmit }) {
-  const [isClosing, setIsClosing] = useState(false);
   const [taskData, setTaskData] = useState({
     title: '',
     description: '',
@@ -17,9 +17,29 @@ export default function AddTaskModal({ isOpen, onClose, onSubmit }) {
     dueDate: '',
   });
 
+  const resetTaskData = useCallback(() => {
+    setTaskData({
+      title: '',
+      description: '',
+      project: '',
+      priority: 'medium',
+      status: 'todo',
+      assignee: '',
+      dueDate: '',
+    });
+  }, []);
+
+  const handleClose = useCallback(() => {
+    resetTaskData();
+  }, [resetTaskData]);
+
+  const { isClosing, handleClose: animateClose, shouldRender } = useModalAnimation(isOpen, {
+    delay: 400,
+    onClose: useCallback(() => { onClose(); handleClose(); }, [onClose, handleClose]),
+  });
+
   useEffect(() => {
     if (isOpen) {
-      setIsClosing(false);
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -33,27 +53,10 @@ export default function AddTaskModal({ isOpen, onClose, onSubmit }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(taskData);
-    handleClose();
+    animateClose();
   };
 
-  const handleClose = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      onClose();
-      setIsClosing(false);
-      setTaskData({
-        title: '',
-        description: '',
-        project: '',
-        priority: 'medium',
-        status: 'todo',
-        assignee: '',
-        dueDate: '',
-      });
-    }, 400);
-  };
-
-  if (!isOpen && !isClosing) return null;
+  if (!shouldRender) return null;
 
   return (
     <>

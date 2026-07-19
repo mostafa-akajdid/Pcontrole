@@ -1,21 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Mail, User, Briefcase } from 'lucide-react';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
+
+const INITIAL_MEMBER = {
+  name: '',
+  email: '',
+  role: '',
+  department: 'engineering',
+};
 
 export default function AddMemberModal({ isOpen, onClose, onSubmit }) {
-  const [isClosing, setIsClosing] = useState(false);
-  const [memberData, setMemberData] = useState({
-    name: '',
-    email: '',
-    role: '',
-    department: 'engineering',
+  const [memberData, setMemberData] = useState(INITIAL_MEMBER);
+
+  const { isClosing, handleClose, shouldRender } = useModalAnimation(isOpen, {
+    delay: 400,
+    onClose: useCallback(() => { onClose(); setMemberData(INITIAL_MEMBER); }, [onClose]),
   });
 
   useEffect(() => {
     if (isOpen) {
-      setIsClosing(false);
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -32,21 +38,7 @@ export default function AddMemberModal({ isOpen, onClose, onSubmit }) {
     handleClose();
   };
 
-  const handleClose = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      onClose();
-      setIsClosing(false);
-      setMemberData({
-        name: '',
-        email: '',
-        role: '',
-        department: 'engineering',
-      });
-    }, 400);
-  };
-
-  if (!isOpen && !isClosing) return null;
+  if (!shouldRender) return null;
 
   return (
     <>

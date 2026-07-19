@@ -29,16 +29,8 @@ import Select from '@/components/ui/Select';
 import ConfirmDialog from '@/components/modals/ConfirmDialog';
 import { useAppearance } from '@/contexts/AppearanceContext';
 import { useToast } from '@/contexts/ToastContext';
-import { formatFileSize, IMAGE_FORMATS, VIDEO_FORMATS } from '@/lib/utils';
-
-function useDebounce(value, delay) {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-  return debouncedValue;
-}
+import { formatFileSize, IMAGE_FORMATS, VIDEO_FORMATS, formatDateShort } from '@/lib/utils';
+import { useDebounce } from '@/hooks/useDebounce';
 
 function getFormatIcon(format) {
   const f = format?.toLowerCase() || '';
@@ -315,11 +307,6 @@ export default function MediaPage() {
     } else {
       setSelectedIds(media.map((m) => m.id));
     }
-  };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const sortOptions = [
@@ -611,7 +598,7 @@ export default function MediaPage() {
                         <span className="text-sm text-gray-500 dark:text-gray-400">{item.folder}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">{formatDate(item.createdAt)}</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">{formatDateShort(item.createdAt)}</span>
                       </td>
                       <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
@@ -717,7 +704,7 @@ export default function MediaPage() {
                 </div>
                 <div>
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Uploaded</p>
-                  <p className="text-sm text-gray-800 dark:text-white">{formatDate(detailItem.createdAt)}</p>
+                  <p className="text-sm text-gray-800 dark:text-white">{formatDateShort(detailItem.createdAt)}</p>
                   {detailItem.uploadedBy && (
                     <p className="text-xs text-gray-500 dark:text-gray-400">by {detailItem.uploadedBy.name}</p>
                   )}

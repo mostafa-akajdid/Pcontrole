@@ -1,6 +1,7 @@
 import { formatDistanceToNow } from 'date-fns';
 import { HardDrive, Image, FileText, Film, Music, File } from 'lucide-react';
 import { useAppearance } from '@/contexts/AppearanceContext';
+import { formatFileSize } from '@/lib/utils';
 
 const FORMAT_ICONS = {
   jpg: Image,
@@ -35,20 +36,12 @@ const FORMAT_COLORS = {
   docx: 'bg-indigo-100 text-indigo-600',
 };
 
-function formatBytes(bytes) {
-  if (!bytes || bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-}
-
 export default function TimeTracker({ data }) {
   const { accentColor } = useAppearance();
   const storage = data?.storageBreakdown;
   const recentMedia = data?.recentMedia || [];
 
-  const totalSize = formatBytes(storage?.totalSizeBytes);
+  const totalSize = formatFileSize(storage?.totalSizeBytes);
 
   return (
     <div 
@@ -93,7 +86,7 @@ export default function TimeTracker({ data }) {
                   <div className="flex-1">
                     <div className="flex justify-between text-xs mb-1">
                       <span className="font-medium uppercase">{fmt.format}</span>
-                      <span className="text-white/70">{fmt.count} files · {formatBytes(fmt.sizeBytes)}</span>
+                      <span className="text-white/70">{fmt.count} files · {formatFileSize(fmt.sizeBytes)}</span>
                     </div>
                     <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
                       <div 

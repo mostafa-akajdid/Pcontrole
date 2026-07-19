@@ -12,6 +12,7 @@ import { useToast } from '@/contexts/ToastContext';
 import PermissionGuard from '@/components/ui/PermissionGuard';
 import { useAppearance } from '@/contexts/AppearanceContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatDateShort } from '@/lib/utils';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All Status' },
@@ -224,11 +225,6 @@ export default function UsersPage() {
     setPage(1);
   };
 
-  const formatDate = (date) => {
-    if (!date) return '-';
-    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
   return (
     <DashboardLayout title="Users - Management" description="Manage team members and their access">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -356,8 +352,8 @@ export default function UsersPage() {
                           {u.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{formatDate(u.createdAt)}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{u.lastLoginAt ? formatDate(u.lastLoginAt) : 'Never'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{formatDateShort(u.createdAt)}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{u.lastLoginAt ? formatDateShort(u.lastLoginAt) : 'Never'}</td>
                       <td className="px-6 py-4 text-right">
                         <div className="relative inline-block">
                           <button onClick={() => setActionMenuOpen(actionMenuOpen === u.id ? null : u.id)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600">
@@ -435,7 +431,7 @@ export default function UsersPage() {
                   <span>{u.role?.name || 'No Role'}</span>
                 </div>
                 <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                  <span className="text-xs text-gray-500">Joined {formatDate(u.createdAt)}</span>
+                  <span className="text-xs text-gray-500">Joined {formatDateShort(u.createdAt)}</span>
                   <div className="flex gap-1">
                     <button onClick={() => { setSelectedUser(u); setShowDetail(true); }} className="p-1.5 hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600"><Eye size={14} /></button>
                     <button onClick={() => { setEditingUser(u); setShowForm(true); }} className="p-1.5 hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600"><Edit size={14} /></button>

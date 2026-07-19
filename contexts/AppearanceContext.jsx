@@ -1,56 +1,56 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 
 const AppearanceContext = createContext();
 
-export function AppearanceProvider({ children }) {
-  const [theme, setTheme] = useState('light');
-  const [accentColor, setAccentColor] = useState('#0f4c3a');
+const DEFAULT_THEME = 'light';
+const DEFAULT_ACCENT_COLOR = '#0f4c3a';
 
-  // Load settings from localStorage on mount
+function applyThemeClass(newTheme) {
+  document.documentElement.classList.remove('dark');
+  if (newTheme === 'dark') {
+    document.documentElement.classList.add('dark');
+  } else if (newTheme === 'auto') {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (prefersDark) {
+      document.documentElement.classList.add('dark');
+    }
+  }
+}
+
+export function AppearanceProvider({ children }) {
+  const [theme, setTheme] = useState(DEFAULT_THEME);
+  const [accentColor, setAccentColor] = useState(DEFAULT_ACCENT_COLOR);
+  const [hydrated, setHydrated] = useState(false);
+
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    const savedAccentColor = localStorage.getItem('accentColor') || '#0f4c3a';
+    const savedTheme = localStorage.getItem('theme') || DEFAULT_THEME;
+    const savedAccentColor = localStorage.getItem('accentColor') || DEFAULT_ACCENT_COLOR;
     setTheme(savedTheme);
     setAccentColor(savedAccentColor);
-
-    // Apply theme to document
-    if (savedTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else if (savedTheme === 'auto') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (prefersDark) {
-        document.documentElement.classList.add('dark');
-      }
-    }
-
-    // Apply accent color as CSS variable
+    applyThemeClass(savedTheme);
     document.documentElement.style.setProperty('--accent-color', savedAccentColor);
+    setHydrated(true);
   }, []);
 
-  const updateTheme = (newTheme) => {
+  const updateTheme = useCallback((newTheme) => {
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
+    applyThemeClass(newTheme);
+  }, []);
 
-    // Apply theme to document
-    document.documentElement.classList.remove('dark');
-    if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else if (newTheme === 'auto') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (prefersDark) {
-        document.documentElement.classList.add('dark');
-      }
-    }
-  };
-
-  const updateAccentColor = (newColor) => {
+  const updateAccentColor = useCallback((newColor) => {
     setAccentColor(newColor);
     localStorage.setItem('accentColor', newColor);
     document.documentElement.style.setProperty('--accent-color', newColor);
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({ theme, accentColor, updateTheme, updateAccentColor }),
+    [theme, accentColor, updateTheme, updateAccentColor]
+  );
 
   return (
-    <AppearanceContext.Provider value={{ theme, accentColor, updateTheme, updateAccentColor }}>
+    <AppearanceContext.Provider value={value}>
       {children}
     </AppearanceContext.Provider>
   );

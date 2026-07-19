@@ -21,15 +21,8 @@ import Select from '@/components/ui/Select';
 import { useAppearance } from '@/contexts/AppearanceContext';
 import { useToast } from '@/contexts/ToastContext';
 import { formatFileSize, IMAGE_FORMATS, VIDEO_FORMATS } from '@/lib/utils';
-
-function useDebounce(value, delay) {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-  return debouncedValue;
-}
+import { useDebounce } from '@/hooks/useDebounce';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 
 function getFormatIcon(format) {
   const f = format?.toLowerCase() || '';
@@ -51,7 +44,6 @@ export default function MediaPicker({
   const toast = useToast();
   const fileInputRef = useRef(null);
 
-  const [isClosing, setIsClosing] = useState(false);
   const [media, setMedia] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -200,23 +192,22 @@ export default function MediaPicker({
   const handleConfirm = () => {
     const selectedMedia = media.filter((m) => selectedIds.includes(m.id));
     onSelect(multiple ? selectedMedia : selectedMedia[0] || null);
+    animateClose();
+  };
+
+  const handleClose = useCallback(() => {
     setSelectedIds([]);
-    handleClose();
-  };
+    setSearch('');
+    setFormatFilter('');
+    setFolderFilter('');
+  }, []);
 
-  const handleClose = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      onClose();
-      setIsClosing(false);
-      setSelectedIds([]);
-      setSearch('');
-      setFormatFilter('');
-      setFolderFilter('');
-    }, 300);
-  };
+  const { isClosing, handleClose: animateClose, shouldRender } = useModalAnimation(isOpen, {
+    delay: 300,
+    onClose: useCallback(() => { handleClose(); onClose(); }, [handleClose, onClose]),
+  });
 
-  if (!isOpen && !isClosing) return null;
+  if (!shouldRender) return null;
 
   return (
     <>
@@ -224,7 +215,7 @@ export default function MediaPicker({
         className={`fixed inset-0 bg-black/50 z-[100] transition-opacity duration-300 ${
           isClosing ? 'opacity-0' : 'opacity-100'
         }`}
-        onClick={handleClose}
+        onClick={animateClose}
       />
 
       <div
@@ -261,7 +252,7 @@ export default function MediaPicker({
               Upload Files
             </Button>
             <button
-              onClick={handleClose}
+              onClick={animateClose}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
               <X size={20} className="text-gray-500 dark:text-gray-400" />
@@ -514,7 +505,7 @@ export default function MediaPicker({
               )}
             </div>
             <div className="flex gap-3">
-              <Button variant="secondary" onClick={handleClose}>
+              <Button variant="secondary" onClick={animateClose}>
                 Cancel
               </Button>
               <Button

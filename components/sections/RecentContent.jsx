@@ -2,11 +2,7 @@ import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { Newspaper, FileText } from 'lucide-react';
 import { useAppearance } from '@/contexts/AppearanceContext';
-
-const STATUS_COLORS = {
-  PUBLISHED: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  DRAFT: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-};
+import { STATUS_COLORS } from '@/lib/utils';
 
 function ContentItem({ item, type, accentColor }) {
   const Icon = type === 'blog' ? Newspaper : FileText;

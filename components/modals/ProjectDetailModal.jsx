@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { X, Calendar, MapPin, User, Globe, Tag, ExternalLink } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
+import { formatDateShort } from '@/lib/utils';
 
 export default function ProjectDetailModal({ isOpen, onClose, project }) {
-  const [isClosing, setIsClosing] = useState(false);
+  const { isClosing, handleClose, shouldRender } = useModalAnimation(isOpen, { delay: 400, onClose });
 
   useEffect(() => {
     if (isOpen) {
-      setIsClosing(false);
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -18,26 +19,13 @@ export default function ProjectDetailModal({ isOpen, onClose, project }) {
     };
   }, [isOpen]);
 
-  const handleClose = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      onClose();
-      setIsClosing(false);
-    }, 400);
-  };
-
-  if (!isOpen && !isClosing) return null;
+  if (!shouldRender) return null;
   if (!project) return null;
 
   const getCategoryName = (cat) => {
     if (typeof cat === 'string') return cat;
     if (cat?.name) return cat.name;
     return '';
-  };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   return (
@@ -148,11 +136,11 @@ export default function ProjectDetailModal({ isOpen, onClose, project }) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-gray-400">Created</span>
-                <span className="text-sm font-medium text-gray-800 dark:text-white">{formatDate(project.createdAt)}</span>
+                <span className="text-sm font-medium text-gray-800 dark:text-white">{formatDateShort(project.createdAt)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-gray-400">Last Updated</span>
-                <span className="text-sm font-medium text-gray-800 dark:text-white">{formatDate(project.updatedAt)}</span>
+                <span className="text-sm font-medium text-gray-800 dark:text-white">{formatDateShort(project.updatedAt)}</span>
               </div>
             </div>
           </div>

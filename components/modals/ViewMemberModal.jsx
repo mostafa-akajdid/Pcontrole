@@ -1,33 +1,19 @@
-import { useState, useEffect } from 'react';
 import { X, Mail, Phone } from 'lucide-react';
 import { useAppearance } from '@/contexts/AppearanceContext';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 
 export default function ViewMemberModal({ isOpen, onClose, member, onEdit }) {
   const { accentColor } = useAppearance();
-  const [isAnimating, setIsAnimating] = useState(false);
+  const { isClosing, handleClose, shouldRender } = useModalAnimation(isOpen, { delay: 300, onClose });
 
-  useEffect(() => {
-    if (isOpen) {
-      // Trigger animation after mount
-      setTimeout(() => setIsAnimating(true), 10);
-    } else {
-      setIsAnimating(false);
-    }
-  }, [isOpen]);
-
-  if (!isOpen || !member) return null;
-
-  const handleClose = () => {
-    setIsAnimating(false);
-    setTimeout(() => onClose(), 300); // Wait for animation to complete
-  };
+  if (!shouldRender || !member) return null;
 
   return (
     <>
       {/* Backdrop */}
       <div 
-        className={`fixed inset-0 bg-black/50 z-50 transition-opacity duration-300 ${
-          isAnimating ? 'opacity-100' : 'opacity-0'
+          className={`fixed inset-0 bg-black/50 z-50 transition-opacity duration-300 ${
+          isClosing ? 'opacity-0' : 'opacity-100'
         }`}
         onClick={handleClose}
       ></div>
@@ -36,7 +22,7 @@ export default function ViewMemberModal({ isOpen, onClose, member, onEdit }) {
       <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none">
         <div 
           className={`bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto pointer-events-auto transform transition-all duration-300 ease-out ${
-            isAnimating ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-4'
+            isClosing ? 'scale-95 opacity-0 translate-y-4' : 'scale-100 opacity-100 translate-y-0'
           }`}
         >
           {/* Header */}

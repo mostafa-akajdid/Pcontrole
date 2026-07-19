@@ -1,32 +1,33 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, User, Mail, Lock, Phone, Shield } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import MediaPicker from '@/components/modals/MediaPicker';
 import { useAppearance } from '@/contexts/AppearanceContext';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
+
+const INITIAL_FORM = {
+  name: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
+  roleId: '',
+  phone: '',
+  bio: '',
+  avatar: '',
+};
 
 export default function UserFormModal({ isOpen, onClose, onSubmit, user = null, roles = [] }) {
   const { accentColor } = useAppearance();
-  const [isClosing, setIsClosing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showMediaPicker, setShowMediaPicker] = useState(false);
   const [errors, setErrors] = useState({});
 
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    roleId: '',
-    phone: '',
-    bio: '',
-    avatar: '',
-  });
+  const [formData, setFormData] = useState(INITIAL_FORM);
 
   useEffect(() => {
     if (isOpen) {
-      setIsClosing(false);
       document.body.style.overflow = 'hidden';
 
       if (user) {
@@ -59,6 +60,16 @@ export default function UserFormModal({ isOpen, onClose, onSubmit, user = null, 
 
     return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen, user?.id, roles.length]);
+
+  const resetForm = useCallback(() => {
+    setFormData(INITIAL_FORM);
+    setErrors({});
+  }, []);
+
+  const { isClosing, handleClose, shouldRender } = useModalAnimation(isOpen, {
+    delay: 300,
+    onClose: useCallback(() => { onClose(); resetForm(); }, [onClose, resetForm]),
+  });
 
   const validate = () => {
     const newErrors = {};
@@ -122,16 +133,6 @@ export default function UserFormModal({ isOpen, onClose, onSubmit, user = null, 
     }
   };
 
-  const handleClose = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      onClose();
-      setIsClosing(false);
-      setFormData({ name: '', email: '', password: '', confirmPassword: '', roleId: '', phone: '', bio: '', avatar: '' });
-      setErrors({});
-    }, 300);
-  };
-
   const handleAvatarSelect = (media) => {
     if (media && media.length > 0) {
       setFormData({ ...formData, avatar: media[0].secureUrl || media[0].url });
@@ -139,7 +140,7 @@ export default function UserFormModal({ isOpen, onClose, onSubmit, user = null, 
     setShowMediaPicker(false);
   };
 
-  if (!isOpen && !isClosing) return null;
+  if (!shouldRender) return null;
 
   return (
     <>

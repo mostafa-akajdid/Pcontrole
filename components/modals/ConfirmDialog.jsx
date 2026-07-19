@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 
 export default function ConfirmDialog({ 
   isOpen, 
@@ -12,17 +13,9 @@ export default function ConfirmDialog({
   type = 'danger', // 'danger' or 'warning' or 'info'
   loading = false
 }) {
-  const [isAnimating, setIsAnimating] = useState(false);
+  const { isClosing, handleClose, shouldRender } = useModalAnimation(isOpen, { delay: 300, onClose });
 
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => setIsAnimating(true), 10);
-    } else {
-      setIsAnimating(false);
-    }
-  }, [isOpen]);
-
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   const typeStyles = {
     danger: {
@@ -41,11 +34,6 @@ export default function ConfirmDialog({
 
   const style = typeStyles[type] || typeStyles.danger;
 
-  const handleClose = () => {
-    setIsAnimating(false);
-    setTimeout(() => onClose(), 300);
-  };
-
   const handleConfirm = async () => {
     try {
       await onConfirm();
@@ -60,7 +48,7 @@ export default function ConfirmDialog({
       {/* Backdrop */}
       <div 
         className={`fixed inset-0 bg-black/50 z-50 transition-opacity duration-300 ${
-          isAnimating ? 'opacity-100' : 'opacity-0'
+          isClosing ? 'opacity-0' : 'opacity-100'
         }`}
         onClick={handleClose}
       ></div>
@@ -69,7 +57,7 @@ export default function ConfirmDialog({
       <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none">
         <div 
           className={`bg-white rounded-2xl max-w-md w-full pointer-events-auto transform transition-all duration-300 ease-out ${
-            isAnimating ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-4'
+            isClosing ? 'scale-95 opacity-0 translate-y-4' : 'scale-100 opacity-100 translate-y-0'
           }`}
         >
           <div className="p-6 text-center">

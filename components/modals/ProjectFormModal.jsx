@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button';
 import MediaPicker from '@/components/modals/MediaPicker';
 import { useAppearance } from '@/contexts/AppearanceContext';
 import { slugify } from '@/lib/utils';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
 
 const TABS = [
   { id: 'general', label: 'General', icon: Settings },
@@ -43,7 +44,6 @@ export default function ProjectFormModal({
 }) {
   const { accentColor } = useAppearance();
 
-  const [isClosing, setIsClosing] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
@@ -57,7 +57,6 @@ export default function ProjectFormModal({
 
   useEffect(() => {
     if (isOpen) {
-      setIsClosing(false);
       setActiveTab('general');
       setFormErrors({});
       setSlugManuallyEdited(false);
@@ -100,6 +99,18 @@ export default function ProjectFormModal({
     };
   }, [isOpen, project]);
 
+  const resetForm = useCallback(() => {
+    setForm({ ...defaultFormState });
+    setActiveTab('general');
+    setFormErrors({});
+    setSlugManuallyEdited(false);
+  }, []);
+
+  const { isClosing, handleClose, shouldRender } = useModalAnimation(isOpen, {
+    delay: 400,
+    onClose: useCallback(() => { onClose(); resetForm(); }, [onClose, resetForm]),
+  });
+
   const updateForm = useCallback((field, value) => {
     setForm((prev) => {
       const next = { ...prev, [field]: value };
@@ -109,18 +120,6 @@ export default function ProjectFormModal({
       return next;
     });
   }, [slugManuallyEdited]);
-
-  const handleClose = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      onClose();
-      setIsClosing(false);
-      setForm({ ...defaultFormState });
-      setActiveTab('general');
-      setFormErrors({});
-      setSlugManuallyEdited(false);
-    }, 400);
-  };
 
   const validate = () => {
     const errors = {};
@@ -237,7 +236,7 @@ export default function ProjectFormModal({
     });
   };
 
-  if (!isOpen && !isClosing) return null;
+  if (!shouldRender) return null;
 
   return (
     <>

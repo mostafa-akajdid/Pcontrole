@@ -33,15 +33,8 @@ import BlogFormModal from '@/components/modals/BlogFormModal';
 import BlogDetailModal from '@/components/modals/BlogDetailModal';
 import { useAppearance } from '@/contexts/AppearanceContext';
 import { useToast } from '@/contexts/ToastContext';
-
-function useDebounce(value, delay) {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-  return debouncedValue;
-}
+import { useDebounce } from '@/hooks/useDebounce';
+import { formatDateShort } from '@/lib/utils';
 
 export default function Blogs() {
   const { accentColor } = useAppearance();
@@ -344,11 +337,6 @@ export default function Blogs() {
     }
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
   const filteredCategories = categories.filter((c) =>
     c.name?.toLowerCase().includes(categorySearch.toLowerCase())
   );
@@ -490,7 +478,7 @@ export default function Blogs() {
     {
       header: 'Updated',
       accessor: 'updatedAt',
-      render: (row) => <span className="text-sm text-gray-500 dark:text-gray-400">{formatDate(row.updatedAt)}</span>,
+      render: (row) => <span className="text-sm text-gray-500 dark:text-gray-400">{formatDateShort(row.updatedAt)}</span>,
     },
     {
       header: '',
@@ -773,7 +761,7 @@ export default function Blogs() {
                         {blog.author?.name || 'Unknown'}
                       </span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {formatDate(blog.updatedAt)}
+                        {formatDateShort(blog.updatedAt)}
                       </span>
                     </div>
                   </div>

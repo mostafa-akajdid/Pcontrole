@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { ClipboardList, ChevronDown, ChevronUp, User, FolderKanban, FileText, Image, Users, Shield, Settings, Bell, Inbox } from 'lucide-react';
-import { formatDistanceToNow, format } from 'date-fns';
+import { getRelativeTime, formatDate } from '@/lib/utils';
 
 const moduleIcons = {
   projects: FolderKanban,
@@ -70,22 +70,6 @@ export default function AuditPage() {
     fetchLogs();
     fetchStats();
   }, [page, filterModule, filterAction]);
-
-  const getRelativeTime = (dateStr) => {
-    try {
-      return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
-    } catch {
-      return '';
-    }
-  };
-
-  const formatDate = (dateStr) => {
-    try {
-      return format(new Date(dateStr), 'MMM d, yyyy HH:mm:ss');
-    } catch {
-      return dateStr;
-    }
-  };
 
   const formatJson = (obj) => {
     if (!obj) return null;

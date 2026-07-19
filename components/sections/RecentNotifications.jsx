@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Bell, FileText, User, Settings, AlertCircle, Info } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { getRelativeTime } from '@/lib/utils';
 import Link from 'next/link';
 
 const typeIcons = {
@@ -25,14 +25,6 @@ export default function RecentNotifications({ data }) {
       setNotifications(data.recentNotifications);
     }
   }, [data]);
-
-  const getRelativeTime = (dateStr) => {
-    try {
-      return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
-    } catch {
-      return '';
-    }
-  };
 
   if (notifications.length === 0) {
     return (

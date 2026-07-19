@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Mail, Phone, Shield, Calendar, Clock, Key, AlertTriangle } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { useAppearance } from '@/contexts/AppearanceContext';
+import { useModalAnimation } from '@/hooks/useModalAnimation';
+import { formatDateShort, formatDateTime } from '@/lib/utils';
 
 const STATUS_STYLES = {
   ACTIVE: 'bg-green-100 text-green-700',
@@ -12,26 +14,22 @@ const STATUS_STYLES = {
 
 export default function UserDetailModal({ isOpen, onClose, user, onEdit, onStatusChange, onResetPassword, onForcePasswordChange }) {
   const { accentColor } = useAppearance();
-  const [isAnimating, setIsAnimating] = useState(false);
   const [showResetForm, setShowResetForm] = useState(false);
   const [newPassword, setNewPassword] = useState('');
 
+  const { isClosing, handleClose, shouldRender } = useModalAnimation(isOpen, {
+    delay: 300,
+    onClose: useCallback(() => { setShowResetForm(false); setNewPassword(''); onClose(); }, [onClose]),
+  });
+
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => setIsAnimating(true), 10);
-    } else {
-      setIsAnimating(false);
       setShowResetForm(false);
       setNewPassword('');
     }
   }, [isOpen]);
 
-  if (!isOpen || !user) return null;
-
-  const handleClose = () => {
-    setIsAnimating(false);
-    setTimeout(() => onClose(), 300);
-  };
+  if (!shouldRender || !user) return null;
 
   const handleResetPassword = async () => {
     if (!newPassword || newPassword.length < 8) return;
@@ -40,29 +38,15 @@ export default function UserDetailModal({ isOpen, onClose, user, onEdit, onStatu
     setNewPassword('');
   };
 
-  const formatDate = (date) => {
-    if (!date) return 'Never';
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric', month: 'short', day: 'numeric',
-    });
-  };
-
-  const formatDateTime = (date) => {
-    if (!date) return 'Never';
-    return new Date(date).toLocaleString('en-US', {
-      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-    });
-  };
-
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black/50 z-50 transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'}`}
+        className={`fixed inset-0 bg-black/50 z-50 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}
         onClick={handleClose}
       />
 
       <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none">
-        <div className={`bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto pointer-events-auto transform transition-all duration-300 ease-out ${isAnimating ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-4'}`}>
+        <div className={`bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto pointer-events-auto transform transition-all duration-300 ease-out ${isClosing ? 'scale-95 opacity-0 translate-y-4' : 'scale-100 opacity-100 translate-y-0'}`}>
           <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
             <h2 className="text-xl font-bold text-gray-800">User Profile</h2>
             <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -138,7 +122,7 @@ export default function UserDetailModal({ isOpen, onClose, user, onEdit, onStatu
                     <Calendar size={14} className="text-gray-400" />
                     <span className="text-xs text-gray-500">Joined</span>
                   </div>
-                  <p className="text-sm text-gray-800">{formatDate(user.createdAt)}</p>
+                  <p className="text-sm text-gray-800">{formatDateShort(user.createdAt)}</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-1">

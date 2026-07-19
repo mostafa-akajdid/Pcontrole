@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Bell, CheckCheck, Trash2, Check, AlertCircle, Info, Settings, FileText, User, Inbox } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { getRelativeTime } from '@/lib/utils';
 import { useToast } from '@/contexts/ToastContext';
 
 const typeIcons = {
@@ -145,14 +145,6 @@ export default function NotificationsPage() {
       else next.add(id);
       return next;
     });
-  };
-
-  const getRelativeTime = (dateStr) => {
-    try {
-      return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
-    } catch {
-      return '';
-    }
   };
 
   return (

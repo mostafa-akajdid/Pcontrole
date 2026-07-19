@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ClipboardList, FolderKanban, FileText, Image, Users, Shield, Settings } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { getRelativeTime } from '@/lib/utils';
 import Link from 'next/link';
 
 const moduleIcons = {
@@ -27,14 +27,6 @@ export default function RecentAudit({ data }) {
       setLogs(data.recentAuditLogs);
     }
   }, [data]);
-
-  const getRelativeTime = (dateStr) => {
-    try {
-      return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
-    } catch {
-      return '';
-    }
-  };
 
   if (logs.length === 0) {
     return (

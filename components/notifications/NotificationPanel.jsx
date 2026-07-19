@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Bell, Trash2, AlertCircle, Info, Settings, FileText, User } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { getRelativeTime } from '@/lib/utils';
 import Link from 'next/link';
 
 const typeIcons = {
@@ -96,14 +96,6 @@ export default function NotificationPanel({ onClose, onMarkAllRead, onCountChang
       setSelected(new Set());
     } catch (err) {
       console.error('Failed to delete notifications:', err);
-    }
-  };
-
-  const getRelativeTime = (dateStr) => {
-    try {
-      return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
-    } catch {
-      return '';
     }
   };
 
