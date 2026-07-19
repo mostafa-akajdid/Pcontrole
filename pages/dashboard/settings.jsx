@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Globe, Palette, Search, Mail, Share2, Send, MapPin, Shield,
-  Wrench, Server, User, Lock,
+  Wrench, Server, User, Lock, Key,
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,6 +18,7 @@ import MaintenanceSettings from '@/components/settings/MaintenanceSettings';
 import SystemInfo from '@/components/settings/SystemInfo';
 import ProfileSettings from '@/components/settings/ProfileSettings';
 import PasswordSettings from '@/components/settings/PasswordSettings';
+import HeadlessApiSettings from '@/components/settings/HeadlessApiSettings';
 
 const PERSONAL_TABS = [
   { id: 'profile', label: 'Profile', icon: User },
@@ -34,6 +35,7 @@ const SYSTEM_TABS = [
   { id: 'localization', label: 'Localization', icon: MapPin },
   { id: 'security', label: 'Security', icon: Shield },
   { id: 'maintenance', label: 'Maintenance', icon: Wrench },
+  { id: 'headless', label: 'Headless API', icon: Key },
   { id: 'system', label: 'System Info', icon: Server },
 ];
 
@@ -47,6 +49,7 @@ export default function SettingsPage() {
   const canUpdateSettings = hasPermission('settings.update');
   const canViewSystemInfo = hasPermission('settings.system-info');
   const canViewMaintenance = hasPermission('settings.maintenance');
+  const canViewHeadless = hasPermission('headless.view');
 
   const fetchSettings = useCallback(async (group) => {
     try {
@@ -73,7 +76,8 @@ export default function SettingsPage() {
   const visibleSystemTabs = SYSTEM_TABS.filter((tab) => {
     if (tab.id === 'system') return canViewSystemInfo;
     if (tab.id === 'maintenance') return canViewMaintenance;
-    if (!canUpdateSettings && tab.id !== 'system' && tab.id !== 'maintenance') return false;
+    if (tab.id === 'headless') return canViewHeadless;
+    if (!canUpdateSettings && tab.id !== 'system' && tab.id !== 'maintenance' && tab.id !== 'headless') return false;
     return true;
   });
 
@@ -137,6 +141,7 @@ export default function SettingsPage() {
           {activeTab === 'localization' && <LocalizationSettings data={settingsData.localization} onSave={() => fetchSettings('localization')} />}
           {activeTab === 'security' && <SecuritySettings data={settingsData.security} onSave={() => fetchSettings('security')} />}
           {activeTab === 'maintenance' && <MaintenanceSettings data={settingsData.maintenance} onSave={() => fetchSettings('maintenance')} />}
+          {activeTab === 'headless' && <HeadlessApiSettings />}
           {activeTab === 'system' && <SystemInfo />}
         </div>
       </div>

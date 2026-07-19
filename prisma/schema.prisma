@@ -165,7 +165,7 @@ model Project {
   title           String
   slug            String   @unique
   shortDescription String?
-  fullDescription String?  @db.Text
+  fullDescription Json?
   coverImage      String?
   featured        Boolean  @default(false)
   status          ProjectStatus @default(DRAFT)
@@ -337,6 +337,25 @@ model Notification {
   @@index([entityType, entityId])
   @@index([type])
   @@map("notifications")
+}
+
+// =============================================================================
+// HEADLESS API KEYS
+// =============================================================================
+
+model HeadlessApiKey {
+  id            String   @id @default(uuid())
+  siteName      String
+  domain        String
+  apiKey        String   @unique
+  enabled       Boolean  @default(true)
+  allowedModules Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([apiKey])
+  @@index([enabled])
+  @@map("headless_api_keys")
 }
 
 // =============================================================================

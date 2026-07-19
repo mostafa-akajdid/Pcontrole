@@ -473,7 +473,7 @@ export default function Projects() {
       render: (row) => (
         <div>
           <p className="font-semibold text-gray-800 dark:text-white text-sm">{row.title}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">{row.shortDescription || row.description || ''}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">{row.shortDescription || ''}</p>
         </div>
       ),
     },
@@ -846,7 +846,7 @@ export default function Projects() {
                   </div>
                   <div className="p-5">
                     <h3 className="font-bold text-gray-800 dark:text-white mb-1 line-clamp-1">{project.title}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">{project.shortDescription || project.description || ''}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-3">{project.shortDescription || ''}</p>
                     {(project.categories || []).length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mb-3">
                         {project.categories.slice(0, 3).map((cat, i) => (

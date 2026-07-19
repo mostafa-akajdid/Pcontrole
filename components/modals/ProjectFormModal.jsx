@@ -5,6 +5,7 @@ import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import MediaPicker from '@/components/modals/MediaPicker';
+import ConfirmDialog from '@/components/modals/ConfirmDialog';
 import { useAppearance } from '@/contexts/AppearanceContext';
 import { slugify } from '@/lib/utils';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
@@ -18,6 +19,8 @@ const TABS = [
 
 const EMPTY_IMAGE = { url: '', altText: '', caption: '' };
 
+const defaultDescription = { type: 'list', items: [''] };
+
 const defaultFormState = {
   title: '',
   slug: '',
@@ -28,12 +31,46 @@ const defaultFormState = {
   categories: [],
   status: 'draft',
   featured: false,
-  description: '',
+  description: { ...defaultDescription },
   coverImage: '',
   gallery: [],
   metaTitle: '',
   metaDescription: '',
 };
+
+function parseDescription(raw) {
+  if (!raw || typeof raw === 'string') {
+    if (typeof raw === 'string' && raw.trim()) {
+      return { type: 'paragraph', content: raw.trim() };
+    }
+    return { ...defaultDescription };
+  }
+  if (raw.type === 'list') {
+    const items = Array.isArray(raw.items) && raw.items.length > 0
+      ? raw.items.map((item) => String(item).trim()).filter(Boolean)
+      : [''];
+    return { type: 'list', items };
+  }
+  if (raw.type === 'paragraph') {
+    return { type: 'paragraph', content: String(raw.content || '') };
+  }
+  return { ...defaultDescription };
+}
+
+function formatDescriptionPayload(desc) {
+  if (!desc) return undefined;
+  if (desc.type === 'list') {
+    const filtered = desc.items.map((item) => item.trim()).filter(Boolean);
+    if (filtered.length === 0) return undefined;
+    return { type: 'list', items: filtered };
+  }
+  if (desc.type === 'paragraph') {
+    const trimmed = desc.content.trim();
+    if (!trimmed) return undefined;
+    return { type: 'paragraph', content: trimmed };
+  }
+  return undefined;
+}
 
 export default function ProjectFormModal({
   isOpen,
@@ -50,6 +87,8 @@ export default function ProjectFormModal({
   const [formErrors, setFormErrors] = useState({});
   const [showCoverPicker, setShowCoverPicker] = useState(false);
   const [showGalleryPicker, setShowGalleryPicker] = useState(false);
+  const [showTypeConfirm, setShowTypeConfirm] = useState(false);
+  const [pendingType, setPendingType] = useState(null);
 
   const [form, setForm] = useState({ ...defaultFormState });
 
@@ -60,6 +99,8 @@ export default function ProjectFormModal({
       setActiveTab('general');
       setFormErrors({});
       setSlugManuallyEdited(false);
+      setShowTypeConfirm(false);
+      setPendingType(null);
       document.body.style.overflow = 'hidden';
 
       if (project) {
@@ -75,7 +116,7 @@ export default function ProjectFormModal({
             : [],
           status: (project.status || 'DRAFT').toLowerCase(),
           featured: project.featured || false,
-          description: project.fullDescription || project.description || '',
+          description: parseDescription(project.fullDescription || project.description),
           coverImage: project.coverImage || '',
           gallery: Array.isArray(project.images)
             ? project.images.map((img) => ({
@@ -121,6 +162,92 @@ export default function ProjectFormModal({
     });
   }, [slugManuallyEdited]);
 
+  const updateDescription = useCallback((updater) => {
+    setForm((prev) => ({
+      ...prev,
+      description: typeof updater === 'function' ? updater(prev.description) : updater,
+    }));
+  }, []);
+
+  const isDescriptionEmpty = useCallback(() => {
+    const desc = form.description;
+    if (!desc) return true;
+    if (desc.type === 'list') {
+      return !desc.items || desc.items.every((item) => !item.trim());
+    }
+    if (desc.type === 'paragraph') {
+      return !desc.content || !desc.content.trim();
+    }
+    return true;
+  }, [form.description]);
+
+  const handleTypeChange = useCallback((newType) => {
+    if (form.description.type === newType) return;
+    if (!isDescriptionEmpty()) {
+      setPendingType(newType);
+      setShowTypeConfirm(true);
+      return;
+    }
+    if (newType === 'list') {
+      updateDescription({ type: 'list', items: [''] });
+    } else {
+      updateDescription({ type: 'paragraph', content: '' });
+    }
+  }, [form.description.type, isDescriptionEmpty, updateDescription]);
+
+  const confirmTypeChange = useCallback(() => {
+    if (pendingType === 'list') {
+      updateDescription({ type: 'list', items: [''] });
+    } else {
+      updateDescription({ type: 'paragraph', content: '' });
+    }
+    setShowTypeConfirm(false);
+    setPendingType(null);
+  }, [pendingType, updateDescription]);
+
+  const addListItem = useCallback(() => {
+    updateDescription((prev) => ({
+      ...prev,
+      items: [...(prev.items || []), ''],
+    }));
+  }, [updateDescription]);
+
+  const updateListItem = useCallback((index, value) => {
+    updateDescription((prev) => {
+      const items = [...prev.items];
+      items[index] = value;
+      return { ...prev, items };
+    });
+  }, [updateDescription]);
+
+  const removeListItem = useCallback((index) => {
+    updateDescription((prev) => {
+      const items = prev.items.filter((_, i) => i !== index);
+      return { ...prev, items: items.length > 0 ? items : [''] };
+    });
+  }, [updateDescription]);
+
+  const moveListItem = useCallback((index, direction) => {
+    updateDescription((prev) => {
+      const items = [...prev.items];
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= items.length) return prev;
+      [items[index], items[targetIndex]] = [items[targetIndex], items[index]];
+      return { ...prev, items };
+    });
+  }, [updateDescription]);
+
+  const handleListItemKeyDown = useCallback((e, index) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      updateDescription((prev) => {
+        const items = [...prev.items];
+        items.splice(index + 1, 0, '');
+        return { ...prev, items };
+      });
+    }
+  }, [updateDescription]);
+
   const validate = () => {
     const errors = {};
     if (!form.title.trim()) {
@@ -146,7 +273,7 @@ export default function ProjectFormModal({
         title: form.title,
         slug: form.slug || undefined,
         shortDescription: form.shortDescription || undefined,
-        fullDescription: form.description || undefined,
+        fullDescription: formatDescriptionPayload(form.description),
         coverImage: form.coverImage || undefined,
         featured: form.featured,
         status: form.status.toUpperCase(),
@@ -237,6 +364,8 @@ export default function ProjectFormModal({
   };
 
   if (!shouldRender) return null;
+
+  const descriptionType = form.description?.type || 'list';
 
   return (
     <>
@@ -434,18 +563,96 @@ export default function ProjectFormModal({
               {activeTab === 'content' && (
                 <div className="space-y-6">
                   <div>
-                    <Textarea
-                      label="Full Description"
-                      value={form.description}
-                      onChange={(e) => updateForm('description', e.target.value)}
-                      placeholder="Write a detailed description of the project..."
-                      rows={12}
-                      className="min-h-[300px]"
-                    />
-                    <div className="mt-2 flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
-                      <Info size={14} />
-                      <span>Rich text editor will be integrated in a future update.</span>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                      Full Description
+                    </label>
+                    <div className="flex gap-4 mb-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="descriptionType"
+                          value="list"
+                          checked={descriptionType === 'list'}
+                          onChange={() => handleTypeChange('list')}
+                          className="w-4 h-4 text-blue-600 bg-white border-gray-300 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">List</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="descriptionType"
+                          value="paragraph"
+                          checked={descriptionType === 'paragraph'}
+                          onChange={() => handleTypeChange('paragraph')}
+                          className="w-4 h-4 text-blue-600 bg-white border-gray-300 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Paragraph</span>
+                      </label>
                     </div>
+
+                    {descriptionType === 'list' ? (
+                      <div className="space-y-2">
+                        {form.description.items.map((item, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <div className="flex flex-col items-center gap-0.5 flex-shrink-0 cursor-grab">
+                              <button
+                                type="button"
+                                onClick={() => moveListItem(index, -1)}
+                                disabled={index === 0}
+                                className="text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed p-0.5"
+                              >
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 10 6">
+                                  <path d="M5 0L10 6H0L5 0Z" />
+                                </svg>
+                              </button>
+                              <GripVertical size={14} className="text-gray-300 dark:text-gray-600" />
+                              <button
+                                type="button"
+                                onClick={() => moveListItem(index, 1)}
+                                disabled={index === form.description.items.length - 1}
+                                className="text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed p-0.5"
+                              >
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 10 6">
+                                  <path d="M5 6L0 0H10L5 6Z" />
+                                </svg>
+                              </button>
+                            </div>
+                            <Input
+                              value={item}
+                              onChange={(e) => updateListItem(index, e.target.value)}
+                              onKeyDown={(e) => handleListItemKeyDown(e, index)}
+                              placeholder={`Item ${index + 1}`}
+                              className="flex-1"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeListItem(index)}
+                              disabled={form.description.items.length <= 1}
+                              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={addListItem}
+                          className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
+                        >
+                          <Plus size={14} />
+                          Add Item
+                        </button>
+                      </div>
+                    ) : (
+                      <Textarea
+                        value={form.description.content}
+                        onChange={(e) => updateDescription({ type: 'paragraph', content: e.target.value })}
+                        placeholder="Write a detailed description of the project..."
+                        rows={12}
+                        className="min-h-[300px]"
+                      />
+                    )}
                   </div>
                 </div>
               )}
@@ -726,6 +933,16 @@ export default function ProjectFormModal({
         onSelect={handleGallerySelect}
         multiple={true}
         title="Choose Gallery Images"
+      />
+      <ConfirmDialog
+        isOpen={showTypeConfirm}
+        onClose={() => { setShowTypeConfirm(false); setPendingType(null); }}
+        onConfirm={confirmTypeChange}
+        title="Change Description Type"
+        message="Changing the content type will remove the current content."
+        confirmText="Change"
+        cancelText="Cancel"
+        type="warning"
       />
     </>
   );

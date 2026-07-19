@@ -374,7 +374,7 @@ All input validation uses Zod schemas defined in `lib/validation.js`.
 export const createProjectSchema = z.object({
   title: z.string().min(1).max(200),
   shortDescription: z.string().max(500).optional(),
-  fullDescription: z.string().optional(),
+  fullDescription: fullDescriptionSchema.optional(),
   status: z.enum(['DRAFT', 'PUBLISHED']).optional(),
   // ...
 });

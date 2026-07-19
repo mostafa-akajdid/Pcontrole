@@ -70,6 +70,13 @@ const PERMISSIONS = [
   // Audit Log
   { name: 'audit.view', module: 'audit', action: 'view' },
   { name: 'audit.export', module: 'audit', action: 'export' },
+
+  // Headless API
+  { name: 'headless.view', module: 'headless', action: 'view' },
+  { name: 'headless.create', module: 'headless', action: 'create' },
+  { name: 'headless.update', module: 'headless', action: 'update' },
+  { name: 'headless.delete', module: 'headless', action: 'delete' },
+  { name: 'headless.regenerate', module: 'headless', action: 'regenerate' },
 ];
 
 const ROLES = [

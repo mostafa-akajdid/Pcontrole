@@ -74,14 +74,35 @@ export default function ProjectDetailModal({ isOpen, onClose, project }) {
             ))}
           </div>
 
-          {project.description && (
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</h4>
-              <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap leading-relaxed">
-                {project.description}
+          {(() => {
+            const rawDesc = project.fullDescription || project.description;
+            if (!rawDesc) return null;
+            const desc = typeof rawDesc === 'object' && rawDesc !== null
+              ? rawDesc
+              : typeof rawDesc === 'string'
+                ? { type: 'paragraph', content: rawDesc }
+                : null;
+            if (!desc) return null;
+            return (
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</h4>
+                {desc.type === 'paragraph' ? (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap leading-relaxed">
+                    {desc.content}
+                  </p>
+                ) : desc.type === 'list' ? (
+                  <ul className="space-y-1.5">
+                    {(desc.items || []).map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 mt-1.5 flex-shrink-0" />
+                        <span className="leading-relaxed">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           <div className="grid grid-cols-2 gap-4">
             {project.client && (

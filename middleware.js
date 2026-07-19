@@ -15,6 +15,10 @@ const API_PUBLIC_ROUTES = [
   '/api/auth/reset-password',
 ];
 
+function isPublicApiRoute(pathname) {
+  return pathname.startsWith('/api/public/');
+}
+
 const CSRF_COOKIE_NAME = 'csrf_token';
 const CSRF_HEADER_NAME = 'x-csrf-token';
 const STATE_CHANGING_METHODS = ['POST', 'PUT', 'DELETE', 'PATCH'];
@@ -50,7 +54,7 @@ function validateCsrf(req, cookies) {
 export async function middleware(req) {
   const { pathname } = req.nextUrl;
 
-  if (pathname.startsWith('/api/') && isApiPublicRoute(pathname)) {
+  if (pathname.startsWith('/api/') && (isApiPublicRoute(pathname) || isPublicApiRoute(pathname))) {
     return NextResponse.next();
   }
 
