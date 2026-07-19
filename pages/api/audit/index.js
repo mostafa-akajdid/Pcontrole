@@ -1,6 +1,6 @@
-import { AuditService } from '@/lib/services';
+import { AuditService, UserService } from '@/lib/services';
 import { getUserFromRequest } from '@/lib/auth';
-import { successResponse, errorResponse, methodNotAllowed, unauthorizedResponse } from '@/lib/api';
+import { successResponse, errorResponse, methodNotAllowed, unauthorizedResponse, forbiddenResponse } from '@/lib/api';
 import { parsePagination, buildPagination, parseSearch } from '@/lib/pagination';
 
 export default async function handler(req, res) {
@@ -15,6 +15,17 @@ export default async function handler(req, res) {
   }
 
   try {
+    let user;
+    try {
+      user = await UserService.findById(tokenPayload.userId);
+    } catch {
+      return unauthorizedResponse(res);
+    }
+
+    if (!user || !user.permissions?.includes('audit.view')) {
+      return forbiddenResponse(res, 'Insufficient permissions to view audit logs');
+    }
+
     const { page, perPage } = parsePagination(req.query);
     const search = parseSearch(req.query);
     const { module, action, entityType, userId, startDate, endDate } = req.query;

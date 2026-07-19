@@ -1,6 +1,7 @@
 import { NotificationService } from '@/lib/services';
+import { UserService } from '@/lib/services';
 import { getUserFromRequest } from '@/lib/auth';
-import { successResponse, errorResponse, methodNotAllowed, unauthorizedResponse } from '@/lib/api';
+import { successResponse, errorResponse, methodNotAllowed, unauthorizedResponse, forbiddenResponse } from '@/lib/api';
 import { parsePagination, buildPagination, parseSearch } from '@/lib/pagination';
 
 export default async function handler(req, res) {
@@ -8,6 +9,15 @@ export default async function handler(req, res) {
 
   if (!tokenPayload) {
     return unauthorizedResponse(res);
+  }
+
+  const user = await UserService.findById(tokenPayload.userId);
+  if (!user) {
+    return unauthorizedResponse(res);
+  }
+
+  if (user.status === 'SUSPENDED') {
+    return forbiddenResponse(res);
   }
 
   switch (req.method) {

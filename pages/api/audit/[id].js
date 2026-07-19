@@ -1,6 +1,6 @@
-import { AuditService } from '@/lib/services';
+import { AuditService, UserService } from '@/lib/services';
 import { getUserFromRequest } from '@/lib/auth';
-import { successResponse, errorResponse, methodNotAllowed, unauthorizedResponse, notFoundResponse } from '@/lib/api';
+import { successResponse, errorResponse, methodNotAllowed, unauthorizedResponse, forbiddenResponse, notFoundResponse } from '@/lib/api';
 
 export default async function handler(req, res) {
   const tokenPayload = getUserFromRequest(req);
@@ -14,6 +14,17 @@ export default async function handler(req, res) {
   }
 
   try {
+    let user;
+    try {
+      user = await UserService.findById(tokenPayload.userId);
+    } catch {
+      return unauthorizedResponse(res);
+    }
+
+    if (!user || !user.permissions?.includes('audit.view')) {
+      return forbiddenResponse(res, 'Insufficient permissions to view audit logs');
+    }
+
     const { id } = req.query;
     const log = await AuditService.findById(id);
     if (!log) {
