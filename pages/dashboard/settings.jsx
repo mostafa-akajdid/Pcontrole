@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Globe, Palette, Search, Mail, Share2, Send, MapPin, Shield,
-  Wrench, Server, User, Lock, Settings as SettingsIcon,
+  Wrench, Server, User, Lock,
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';

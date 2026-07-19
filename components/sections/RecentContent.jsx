@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-import { Newspaper, FileText, Image } from 'lucide-react';
+import { Newspaper, FileText } from 'lucide-react';
 import { useAppearance } from '@/contexts/AppearanceContext';
 
 const STATUS_COLORS = {

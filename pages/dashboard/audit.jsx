@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { ClipboardList, Filter, Download, ChevronDown, ChevronUp, User, FolderKanban, FileText, Image, Users, Shield, Settings, Bell, Inbox } from 'lucide-react';
+import { ClipboardList, ChevronDown, ChevronUp, User, FolderKanban, FileText, Image, Users, Shield, Settings, Bell, Inbox } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 
 const moduleIcons = {

@@ -6,7 +6,6 @@ import {
   List,
   Trash2,
   Edit2,
-  Eye,
   Upload,
   ChevronLeft,
   ChevronRight,
@@ -16,13 +15,9 @@ import {
   Film,
   File,
   FileText,
-  Download,
-  ExternalLink,
   Copy,
-  Info,
   Folder,
   RotateCcw,
-  Check,
   Move,
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';

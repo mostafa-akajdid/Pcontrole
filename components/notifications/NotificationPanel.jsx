@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bell, Check, CheckCheck, Trash2, AlertCircle, Info, Settings, FileText, User } from 'lucide-react';
+import { Bell, Trash2, AlertCircle, Info, Settings, FileText, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 

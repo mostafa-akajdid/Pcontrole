@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar, Users, Tag, AlertCircle, FileText } from 'lucide-react';
+import { X, Calendar, Users, AlertCircle, FileText } from 'lucide-react';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';

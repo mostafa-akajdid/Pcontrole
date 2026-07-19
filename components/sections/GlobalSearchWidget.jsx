@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, X, FileText, Newspaper, Image, Users } from 'lucide-react';
+import { Search, X, FileText, Newspaper } from 'lucide-react';
 import { useApi } from '@/hooks/useApi';
 import { useAppearance } from '@/contexts/AppearanceContext';
 

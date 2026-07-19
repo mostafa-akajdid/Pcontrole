@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Bell, CheckCheck, Trash2, Filter,Check, AlertCircle, Info, Settings, FileText, User, Inbox } from 'lucide-react';
+import { Bell, CheckCheck, Trash2, Check, AlertCircle, Info, Settings, FileText, User, Inbox } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/contexts/ToastContext';
 

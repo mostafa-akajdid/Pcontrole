@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Plus, FileText, Newspaper, Upload, Users, Settings, FolderOpen } from 'lucide-react';
+import { Plus, FileText, Newspaper, Upload, Users, Settings } from 'lucide-react';
 import { usePermission } from '@/hooks/usePermission';
 import { useAppearance } from '@/contexts/AppearanceContext';
 

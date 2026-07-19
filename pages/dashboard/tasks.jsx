@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Search, Filter, MoreVertical, CheckCircle2, Circle, Clock, AlertCircle, Edit2, Trash2, Eye } from 'lucide-react';
+import { Plus, Search, MoreVertical, CheckCircle2, Circle, Clock, AlertCircle, Edit2, Trash2, Eye } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import AddProjectModal from '@/components/modals/AddProjectModal';
 import AddTaskModal from '@/components/modals/AddTaskModal';

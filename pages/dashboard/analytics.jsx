@@ -1,6 +1,6 @@
 import { TrendingUp, TrendingDown, Users, CheckCircle, Clock, Target } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useAppearance } from '@/contexts/AppearanceContext';
 
 const performanceData = [

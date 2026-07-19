@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Plus,
-  Search,
   LayoutGrid,
   List,
   Trash2,
@@ -24,7 +23,6 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
 import Badge from '@/components/ui/Badge';
-import Card from '@/components/ui/Card';
 import Select from '@/components/ui/Select';
 import DataTable from '@/components/ui/DataTable';
 import ActionMenu from '@/components/ui/ActionMenu';

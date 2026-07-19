@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
-import { Plus, Search, Users, UserCheck, UserX, Shield, MoreVertical, Eye, Edit, Trash2, Key, ArrowUpDown, Grid, List } from 'lucide-react';
+import { Plus, Search, Users, UserCheck, UserX, Shield, MoreVertical, Eye, Edit, Trash2, ArrowUpDown, Grid, List } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StatCard from '@/components/ui/StatCard';
 import Badge from '@/components/ui/Badge';
