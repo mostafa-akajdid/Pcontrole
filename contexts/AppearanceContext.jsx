@@ -20,7 +20,6 @@ function applyThemeClass(newTheme) {
 export function AppearanceProvider({ children }) {
   const [theme, setTheme] = useState(DEFAULT_THEME);
   const [accentColor, setAccentColor] = useState(DEFAULT_ACCENT_COLOR);
-  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') || DEFAULT_THEME;
@@ -29,7 +28,6 @@ export function AppearanceProvider({ children }) {
     setAccentColor(savedAccentColor);
     applyThemeClass(savedTheme);
     document.documentElement.style.setProperty('--accent-color', savedAccentColor);
-    setHydrated(true);
   }, []);
 
   const updateTheme = useCallback((newTheme) => {

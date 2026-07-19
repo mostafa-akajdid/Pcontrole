@@ -1,8 +1,7 @@
 import Link from 'next/link';
-import { formatDistanceToNow } from 'date-fns';
 import { FileText, Tag } from 'lucide-react';
 import { useAppearance } from '@/contexts/AppearanceContext';
-import { STATUS_COLORS } from '@/lib/utils';
+import { STATUS_COLORS, getRelativeTime } from '@/lib/utils';
 
 export default function ProjectList({ data }) {
   const { accentColor } = useAppearance();
@@ -68,7 +67,7 @@ export default function ProjectList({ data }) {
                   <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${STATUS_COLORS[project.status] || STATUS_COLORS.DRAFT}`}>
                     {project.status}
                   </span>
-                  <span>{formatDistanceToNow(new Date(project.createdAt), { addSuffix: true })}</span>
+                  <span>{getRelativeTime(project.createdAt)}</span>
                 </div>
                 {project.categories?.length > 0 && (
                   <div className="flex items-center gap-1 mt-1.5">

@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { formatDistanceToNow } from 'date-fns';
 import { Bell } from 'lucide-react';
 import { useAppearance } from '@/contexts/AppearanceContext';
+import { getRelativeTime } from '@/lib/utils';
 
 export default function RemindersCard({ data }) {
   const { accentColor } = useAppearance();
@@ -67,7 +67,7 @@ export default function RemindersCard({ data }) {
                     <span className="font-medium text-gray-500 dark:text-gray-400">"{item.entityName}"</span>
                   )}
                   {' · '}
-                  {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
+                  {getRelativeTime(item.createdAt)}
                 </p>
               </div>
             </div>

@@ -93,7 +93,6 @@ export default function Verification() {
     setCode(['', '', '', '', '', '']);
     setError('');
     inputRefs.current[0]?.focus();
-    // TODO: Implement resend functionality
   };
 
   return (

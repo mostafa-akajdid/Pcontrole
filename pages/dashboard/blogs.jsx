@@ -34,7 +34,7 @@ import BlogDetailModal from '@/components/modals/BlogDetailModal';
 import { useAppearance } from '@/contexts/AppearanceContext';
 import { useToast } from '@/contexts/ToastContext';
 import { useDebounce } from '@/hooks/useDebounce';
-import { formatDateShort } from '@/lib/utils';
+import { formatDateShort, getCategoryName } from '@/lib/utils';
 
 export default function Blogs() {
   const { accentColor } = useAppearance();
@@ -340,12 +340,6 @@ export default function Blogs() {
   const filteredCategories = categories.filter((c) =>
     c.name?.toLowerCase().includes(categorySearch.toLowerCase())
   );
-
-  const getCategoryName = (cat) => {
-    if (typeof cat === 'string') return cat;
-    if (cat?.name) return cat.name;
-    return '';
-  };
 
   const blogActions = (blog) => {
     if (blog.deletedAt) {

@@ -1,5 +1,5 @@
-import { formatDistanceToNow } from 'date-fns';
 import { Activity, Plus, Edit, Trash, RotateCcw } from 'lucide-react';
+import { getRelativeTime } from '@/lib/utils';
 
 const ACTION_CONFIG = {
   CREATE: { icon: Plus, color: 'text-green-500', bg: 'bg-green-100 dark:bg-green-900/30' },
@@ -69,7 +69,7 @@ export default function ActivityTimeline({ data }) {
                 )}
               </div>
               <span className="text-[10px] text-gray-400 dark:text-gray-500 whitespace-nowrap flex-shrink-0">
-                {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
+                {getRelativeTime(item.createdAt)}
               </span>
             </div>
           );

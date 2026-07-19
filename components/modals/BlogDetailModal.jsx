@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Calendar, User, Globe, Tag, FileText } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
-import { formatDateShort } from '@/lib/utils';
+import { formatDateShort, getCategoryName } from '@/lib/utils';
 
 export default function BlogDetailModal({ isOpen, onClose, blog }) {
   const { isClosing, handleClose, shouldRender } = useModalAnimation(isOpen, { delay: 400, onClose });
@@ -21,12 +21,6 @@ export default function BlogDetailModal({ isOpen, onClose, blog }) {
 
   if (!shouldRender) return null;
   if (!blog) return null;
-
-  const getCategoryName = (cat) => {
-    if (typeof cat === 'string') return cat;
-    if (cat?.name) return cat.name;
-    return '';
-  };
 
   return (
     <>

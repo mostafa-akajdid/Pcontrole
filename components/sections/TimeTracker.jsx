@@ -1,4 +1,3 @@
-import { formatDistanceToNow } from 'date-fns';
 import { HardDrive, Image, FileText, Film, Music, File } from 'lucide-react';
 import { useAppearance } from '@/contexts/AppearanceContext';
 import { formatFileSize } from '@/lib/utils';

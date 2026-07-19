@@ -12,7 +12,7 @@ import { useToast } from '@/contexts/ToastContext';
 import PermissionGuard from '@/components/ui/PermissionGuard';
 import { useAppearance } from '@/contexts/AppearanceContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { formatDateShort } from '@/lib/utils';
+import { formatDateShort, STATUS_COLORS } from '@/lib/utils';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All Status' },
@@ -20,12 +20,6 @@ const STATUS_OPTIONS = [
   { value: 'INACTIVE', label: 'Inactive' },
   { value: 'SUSPENDED', label: 'Suspended' },
 ];
-
-const STATUS_STYLES = {
-  ACTIVE: { bg: 'bg-green-100', text: 'text-green-700' },
-  INACTIVE: { bg: 'bg-gray-100', text: 'text-gray-600' },
-  SUSPENDED: { bg: 'bg-red-100', text: 'text-red-700' },
-};
 
 export default function UsersPage() {
   const router = useRouter();
@@ -348,7 +342,7 @@ export default function UsersPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[u.status]?.bg} ${STATUS_STYLES[u.status]?.text}`}>
+                        <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[u.status] || STATUS_COLORS.ACTIVE}`}>
                           {u.status}
                         </span>
                       </td>
@@ -422,7 +416,7 @@ export default function UsersPage() {
                       <p className="text-sm text-gray-500">{u.email}</p>
                     </div>
                   </div>
-                  <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[u.status]?.bg} ${STATUS_STYLES[u.status]?.text}`}>
+                  <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[u.status] || STATUS_COLORS.ACTIVE}`}>
                     {u.status}
                   </span>
                 </div>

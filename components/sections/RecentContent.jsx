@@ -1,8 +1,7 @@
 import Link from 'next/link';
-import { formatDistanceToNow } from 'date-fns';
 import { Newspaper, FileText } from 'lucide-react';
 import { useAppearance } from '@/contexts/AppearanceContext';
-import { STATUS_COLORS } from '@/lib/utils';
+import { STATUS_COLORS, getRelativeTime } from '@/lib/utils';
 
 function ContentItem({ item, type, accentColor }) {
   const Icon = type === 'blog' ? Newspaper : FileText;
@@ -26,7 +25,7 @@ function ContentItem({ item, type, accentColor }) {
           <span className={`px-1.5 py-0.5 rounded-full font-medium ${STATUS_COLORS[item.status] || STATUS_COLORS.DRAFT}`}>
             {item.status}
           </span>
-          <span>{formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}</span>
+          <span>{getRelativeTime(item.createdAt)}</span>
         </div>
       </div>
       {item.author && (

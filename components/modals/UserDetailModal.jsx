@@ -4,13 +4,7 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { useAppearance } from '@/contexts/AppearanceContext';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
-import { formatDateShort, formatDateTime } from '@/lib/utils';
-
-const STATUS_STYLES = {
-  ACTIVE: 'bg-green-100 text-green-700',
-  INACTIVE: 'bg-gray-100 text-gray-600',
-  SUSPENDED: 'bg-red-100 text-red-700',
-};
+import { formatDateShort, formatDateTime, STATUS_COLORS } from '@/lib/utils';
 
 export default function UserDetailModal({ isOpen, onClose, user, onEdit, onStatusChange, onResetPassword, onForcePasswordChange }) {
   const { accentColor } = useAppearance();
@@ -70,7 +64,7 @@ export default function UserDetailModal({ isOpen, onClose, user, onEdit, onStatu
                 <h3 className="text-2xl font-bold text-gray-800">{user.name}</h3>
                 <p className="text-gray-600">{user.email}</p>
                 <div className="flex flex-wrap gap-2 mt-2 justify-center sm:justify-start">
-                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[user.status] || STATUS_STYLES.ACTIVE}`}>
+                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[user.status] || STATUS_COLORS.ACTIVE}`}>
                     {user.status}
                   </span>
                   <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
