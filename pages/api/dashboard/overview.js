@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const overview = await DashboardService.getOverview();
+    const overview = await DashboardService.getOverview(tokenPayload.userId);
     return successResponse(res, overview);
   } catch (error) {
     console.error('Dashboard overview error:', error);

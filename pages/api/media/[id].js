@@ -27,7 +27,7 @@ export default async function handler(req, res) {
 async function handleGet(req, res, id) {
   try {
     const media = await MediaService.findById(id);
-    const usedIn = await MediaService.getUsedIn(media.publicId);
+    const usedIn = await MediaService.getUsedIn(media.id);
     return successResponse(res, { ...media, usedIn });
   } catch (error) {
     if (error.message === 'Media not found') {
