@@ -31,7 +31,9 @@ export default function ActionMenu({ actions, onAction }) {
   }, [isOpen]);
 
   const handleActionClick = (action) => {
-    onAction(action);
+    if (typeof action.onClick === 'function') {
+      action.onClick();
+    }
     closeWithAnimation();
   };
 

@@ -1,100 +1,79 @@
-import { useState, useRef, useEffect } from 'react';
-import { MoreHorizontal, Video, Edit, Trash2, Bell } from 'lucide-react';
+import Link from 'next/link';
+import { formatDistanceToNow } from 'date-fns';
+import { Bell } from 'lucide-react';
 import { useAppearance } from '@/contexts/AppearanceContext';
 
-export default function RemindersCard() {
+export default function RemindersCard({ data }) {
   const { accentColor } = useAppearance();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [menuClosing, setMenuClosing] = useState(false);
-  const menuRef = useRef(null);
-
-  const closeWithAnimation = () => {
-    setMenuClosing(true);
-    setTimeout(() => {
-      setMenuOpen(false);
-      setMenuClosing(false);
-    }, 200);
+  const activity = data?.recentActivity || [];
+  
+  const getActionIcon = (action) => {
+    switch (action) {
+      case 'CREATE': return '🟢';
+      case 'UPDATE': return '🔵';
+      case 'DELETE': return '🔴';
+      case 'RESTORE': return '🟡';
+      default: return '⚪';
+    }
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuOpen && menuRef.current && !menuRef.current.contains(event.target)) {
-        closeWithAnimation();
-      }
-    };
+  const getActionLabel = (action) => {
+    switch (action) {
+      case 'CREATE': return 'created';
+      case 'UPDATE': return 'updated';
+      case 'DELETE': return 'deleted';
+      case 'RESTORE': return 'restored';
+      default: return action?.toLowerCase();
+    }
+  };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [menuOpen]);
+  const getEntityLabel = (entityType) => {
+    switch (entityType) {
+      case 'Project': return 'a project';
+      case 'Blog': return 'a blog post';
+      case 'Media': return 'a media file';
+      case 'User': return 'a user';
+      case 'Role': return 'a role';
+      default: return entityType?.toLowerCase() || 'an item';
+    }
+  };
 
   return (
-    <div className="lg:col-span-3 bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col justify-between">
+    <div className="h-[400px] bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="font-bold text-lg text-gray-800 dark:text-gray-200">Reminders</h3>
-        <div className="relative" ref={menuRef}>
-          <button
-            onClick={() => {
-              if (menuOpen) {
-                closeWithAnimation();
-              } else {
-                setMenuOpen(true);
-                setMenuClosing(false);
-              }
-            }}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <MoreHorizontal size={20} className="text-gray-400" />
-          </button>
-
-          {(menuOpen || menuClosing) && (
-            <div className={`absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 origin-top-right ${
-              menuClosing ? 'animate-dropdownSlideOut' : 'animate-dropdownSlideIn'
-            }`}>
-              <div className="py-2">
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-gray-700 transition-colors text-left">
-                  <Edit size={16} />
-                  <span className="text-sm">Edit Reminder</span>
-                </button>
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-gray-700 transition-colors text-left">
-                  <Bell size={16} />
-                  <span className="text-sm">Snooze</span>
-                </button>
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-red-600 transition-colors text-left">
-                  <Trash2 size={16} />
-                  <span className="text-sm">Delete</span>
-                </button>
+        <h3 className="font-bold text-lg text-gray-800 dark:text-gray-200">Recent Activity</h3>
+        <Link href="/dashboard/projects" className="text-xs border border-gray-200 dark:border-gray-600 px-3 py-1.5 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          View All
+        </Link>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto space-y-3">
+        {activity.length === 0 ? (
+          <div className="text-center py-8">
+            <Bell size={32} className="mx-auto text-gray-300 dark:text-gray-600 mb-2" />
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No recent activity</p>
+          </div>
+        ) : (
+          activity.slice(0, 8).map((item) => (
+            <div key={item.id} className="flex items-start gap-3 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <span className="text-lg mt-0.5">{getActionIcon(item.action)}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="font-medium">{item.user?.name || 'System'}</span>
+                  {' '}{getActionLabel(item.action)} {getEntityLabel(item.entityType)}
+                </p>
+                <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                  {item.entityName && (
+                    <span className="font-medium text-gray-500 dark:text-gray-400">"{item.entityName}"</span>
+                  )}
+                  {' · '}
+                  {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
+                </p>
               </div>
             </div>
-          )}
-        </div>
+          ))
+        )}
       </div>
-      
-      <div className="flex-1 flex flex-col justify-center">
-        <h4 className="text-xl font-bold text-gray-800 leading-tight mb-2">
-          Meeting with Arc Company
-        </h4>
-        <p className="text-gray-400 text-sm mb-3">
-          Time: 02.00 pm - 04.00 pm
-        </p>
-        <p className="text-gray-500 text-sm mb-4">
-          Discuss project requirements and timeline for the new website redesign. Review mockups and finalize deliverables.
-        </p>
-        <div className="flex items-center gap-2 mb-4">
-          <div className="flex -space-x-2">
-            <img src="https://i.pravatar.cc/32?u=1" alt="Attendee" className="w-7 h-7 rounded-full border-2 border-white" />
-            <img src="https://i.pravatar.cc/32?u=2" alt="Attendee" className="w-7 h-7 rounded-full border-2 border-white" />
-            <img src="https://i.pravatar.cc/32?u=3" alt="Attendee" className="w-7 h-7 rounded-full border-2 border-white" />
-          </div>
-          <span className="text-xs text-gray-500">+3 attendees</span>
-        </div>
-      </div>
-      
-      <button 
-        className="w-full text-white py-3 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg"
-        style={{ backgroundColor: accentColor }}
-      >
-        <Video size={18} /> Start Meeting
-      </button>
     </div>
   );
 }

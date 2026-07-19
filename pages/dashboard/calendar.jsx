@@ -21,7 +21,6 @@ export default function Calendar() {
   const { accentColor } = useAppearance();
 
   const handleCreateEvent = (eventData) => {
-    console.log('Creating event:', eventData);
     setShowEventSidebar(false);
   };
 

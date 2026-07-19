@@ -1,314 +1,315 @@
-import { useState } from 'react';
-import { Bell, CheckCircle, MessageCircle, UserPlus, AlertCircle, Calendar, Trash2, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useAppearance } from '@/contexts/AppearanceContext';
+import { Bell, CheckCheck, Trash2, Filter,Check, AlertCircle, Info, Settings, FileText, User, Inbox } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { useToast } from '@/contexts/ToastContext';
 
-const notificationData = [
-  { 
-    id: 1, 
-    type: 'task', 
-    icon: CheckCircle,
-    color: 'blue',
-    title: 'New task assigned', 
-    message: 'You have been assigned to "Design Homepage" by Sarah Johnson', 
-    time: '2 minutes ago', 
-    unread: true 
-  },
-  { 
-    id: 2, 
-    type: 'comment', 
-    icon: MessageCircle,
-    color: 'green',
-    title: 'New comment on your task', 
-    message: 'Sarah Johnson commented: "Great work on the authentication module!"', 
-    time: '15 minutes ago', 
-    unread: true 
-  },
-  { 
-    id: 3, 
-    type: 'update', 
-    icon: AlertCircle,
-    color: 'purple',
-    title: 'Project updated', 
-    message: 'Website Redesign project deadline has been extended to Dec 15', 
-    time: '1 hour ago', 
-    unread: true 
-  },
-  { 
-    id: 4, 
-    type: 'team', 
-    icon: UserPlus,
-    color: 'orange',
-    title: 'New team member', 
-    message: 'Lisa Anderson joined your team', 
-    time: '2 hours ago', 
-    unread: false 
-  },
-  { 
-    id: 5, 
-    type: 'meeting', 
-    icon: Calendar,
-    color: 'red',
-    title: 'Meeting reminder', 
-    message: 'Sprint planning meeting starts in 30 minutes', 
-    time: '3 hours ago', 
-    unread: false 
-  },
-  { 
-    id: 6, 
-    type: 'task', 
-    icon: CheckCircle,
-    color: 'blue',
-    title: 'Task completed', 
-    message: 'Mike Chen completed "Implement payment gateway"', 
-    time: '5 hours ago', 
-    unread: false 
-  },
-  { 
-    id: 7, 
-    type: 'comment', 
-    icon: MessageCircle,
-    color: 'green',
-    title: 'New comment', 
-    message: 'Emma Wilson mentioned you in a comment', 
-    time: '1 day ago', 
-    unread: false 
-  },
-  { 
-    id: 8, 
-    type: 'update', 
-    icon: AlertCircle,
-    color: 'purple',
-    title: 'System update', 
-    message: 'New features have been added to the dashboard', 
-    time: '2 days ago', 
-    unread: false 
-  },
-];
-
-const colorClasses = {
-  blue: 'bg-blue-100 text-blue-600',
-  green: 'bg-green-100 text-green-600',
-  purple: 'bg-purple-100 text-purple-600',
-  orange: 'bg-orange-100 text-orange-600',
-  red: 'bg-red-100 text-red-600',
+const typeIcons = {
+  content: FileText,
+  user: User,
+  system: Settings,
+  error: AlertCircle,
+  info: Info,
 };
 
-export default function Notifications() {
-  const { accentColor } = useAppearance();
-  const [notifications, setNotifications] = useState(notificationData);
-  const [filter, setFilter] = useState('all');
+const priorityColors = {
+  HIGH: 'text-red-500 bg-red-50',
+  MEDIUM: 'text-amber-500 bg-amber-50',
+  LOW: 'text-blue-500 bg-blue-50',
+};
 
-  const filteredNotifications = notifications.filter(notification => {
-    if (filter === 'all') return true;
-    if (filter === 'unread') return notification.unread;
-    return notification.type === filter;
-  });
+const priorityLabels = {
+  HIGH: 'High',
+  MEDIUM: 'Medium',
+  LOW: 'Low',
+};
 
-  const unreadCount = notifications.filter(n => n.unread).length;
+export default function NotificationsPage() {
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [stats, setStats] = useState({ total: 0, unread: 0, today: 0 });
+  const [filterType, setFilterType] = useState('all');
+  const [filterPriority, setFilterPriority] = useState('all');
+  const [selected, setSelected] = useState(new Set());
+  const toast = useToast();
+  const perPage = 10;
 
-  const markAsRead = (id) => {
-    setNotifications(notifications.map(n => 
-      n.id === id ? { ...n, unread: false } : n
-    ));
+  const fetchNotifications = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: String(page), perPage: String(perPage) });
+      if (filterType !== 'all') params.set('type', filterType);
+      if (filterPriority !== 'all') params.set('priority', filterPriority);
+      if (filterType === 'unread') params.set('unreadOnly', 'true');
+
+      const res = await fetch(`/api/notifications?${params.toString()}`);
+      const json = await res.json();
+      if (json.success) {
+        setNotifications(json.data.items);
+        setTotalPages(json.data.pagination.totalPages);
+        setTotalItems(json.data.pagination.totalItems);
+      }
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, unread: false })));
+  const fetchStats = async () => {
+    try {
+      const res = await fetch('/api/notifications/unread-count');
+      const json = await res.json();
+      if (json.success) {
+        setStats(json.data.stats);
+      }
+    } catch (err) {
+      console.error('Failed to fetch stats:', err);
+    }
   };
 
-  const deleteNotification = (id) => {
-    setNotifications(notifications.filter(n => n.id !== id));
+  useEffect(() => {
+    fetchNotifications();
+    fetchStats();
+  }, [page, filterType, filterPriority]);
+
+  const markAsRead = async (id) => {
+    try {
+      await fetch(`/api/notifications/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'read' }),
+      });
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n)));
+      fetchStats();
+    } catch (err) {
+      console.error('Failed to mark as read:', err);
+    }
+  };
+
+  const markAllRead = async () => {
+    try {
+      await fetch('/api/notifications/mark-all-read', { method: 'POST' });
+      setNotifications((prev) => prev.map((n) => ({ ...n, readAt: new Date().toISOString() })));
+      fetchStats();
+    } catch (err) {
+      console.error('Failed to mark all read:', err);
+    }
+  };
+
+  const deleteNotification = async (id) => {
+    try {
+      const res = await fetch(`/api/notifications/${id}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (json.success) {
+        toast.success('Notification deleted');
+        setNotifications((prev) => prev.filter((n) => n.id !== id));
+        fetchStats();
+      } else {
+        toast.error(json.message || 'Failed to delete notification');
+      }
+    } catch {
+      toast.error('Failed to delete notification');
+    }
+  };
+
+  const bulkDelete = async () => {
+    if (selected.size === 0) return;
+    try {
+      const res = await fetch('/api/notifications', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selected) }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(`${selected.size} notification${selected.size !== 1 ? 's' : ''} deleted`);
+        setNotifications((prev) => prev.filter((n) => !selected.has(n.id)));
+        setSelected(new Set());
+        fetchStats();
+      } else {
+        toast.error(json.message || 'Failed to delete notifications');
+      }
+    } catch {
+      toast.error('Failed to delete notifications');
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const getRelativeTime = (dateStr) => {
+    try {
+      return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
+    } catch {
+      return '';
+    }
   };
 
   return (
-    <DashboardLayout
-      title="Notifications - Project Management"
-      description="View and manage your notifications"
-    >
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-1">Notifications</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">
-            {unreadCount > 0 ? `You have ${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'All caught up!'}
-          </p>
-        </div>
-        {unreadCount > 0 && (
-          <button 
-            onClick={markAllAsRead}
-            className="flex items-center gap-2 px-4 py-2 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: accentColor }}
-          >
-            <Check size={16} />
-            Mark all as read
-          </button>
-        )}
+    <DashboardLayout title="Notifications" description="View and manage your notifications.">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-1">Notifications</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">Stay informed about activity across your projects.</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Total</p>
-            <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
-              <Bell size={20} className="text-gray-600 dark:text-gray-400" />
-            </div>
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        {[
+          { label: 'Total', value: stats.total, color: 'text-gray-800' },
+          { label: 'Unread', value: stats.unread, color: 'text-red-500' },
+          { label: 'Today', value: stats.today, color: 'text-blue-500' },
+        ].map((s) => (
+          <div key={s.label} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <p className="text-xs text-gray-500 mb-1">{s.label}</p>
+            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
           </div>
-          <p className="text-2xl font-bold text-gray-800 dark:text-white">{notifications.length}</p>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Unread</p>
-            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-              <AlertCircle size={20} className="text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-gray-800 dark:text-white">{unreadCount}</p>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Tasks</p>
-            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-              <CheckCircle size={20} className="text-green-600 dark:text-green-400" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-gray-800 dark:text-white">{notifications.filter(n => n.type === 'task').length}</p>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Comments</p>
-            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
-              <MessageCircle size={20} className="text-purple-600 dark:text-purple-400" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-gray-800 dark:text-white">{notifications.filter(n => n.type === 'comment').length}</p>
-        </div>
+        ))}
       </div>
 
-      {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-6 border border-gray-100 dark:border-gray-700">
-        <div className="flex gap-2 overflow-x-auto">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              filter === 'all' ? 'text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-            style={filter === 'all' ? { backgroundColor: accentColor } : {}}
+      {/* Filters & Actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={filterType}
+            onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
+            className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            All
-          </button>
-          <button
-            onClick={() => setFilter('unread')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              filter === 'unread' ? 'text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-            style={filter === 'unread' ? { backgroundColor: accentColor } : {}}
+            <option value="all">All Types</option>
+            <option value="content">Content</option>
+            <option value="user">User</option>
+            <option value="system">System</option>
+            <option value="unread">Unread</option>
+          </select>
+          <select
+            value={filterPriority}
+            onChange={(e) => { setFilterPriority(e.target.value); setPage(1); }}
+            className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            Unread
-          </button>
+            <option value="all">All Priorities</option>
+            <option value="HIGH">High</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="LOW">Low</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          {selected.size > 0 && (
+            <button
+              onClick={bulkDelete}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+            >
+              <Trash2 size={14} /> Delete ({selected.size})
+            </button>
+          )}
           <button
-            onClick={() => setFilter('task')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              filter === 'task' ? 'text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-            style={filter === 'task' ? { backgroundColor: accentColor } : {}}
+            onClick={markAllRead}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
           >
-            Tasks
-          </button>
-          <button
-            onClick={() => setFilter('comment')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              filter === 'comment' ? 'text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-            style={filter === 'comment' ? { backgroundColor: accentColor } : {}}
-          >
-            Comments
-          </button>
-          <button
-            onClick={() => setFilter('update')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              filter === 'update' ? 'text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-            style={filter === 'update' ? { backgroundColor: accentColor } : {}}
-          >
-            Updates
-          </button>
-          <button
-            onClick={() => setFilter('team')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              filter === 'team' ? 'text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-            style={filter === 'team' ? { backgroundColor: accentColor } : {}}
-          >
-            Team
-          </button>
-          <button
-            onClick={() => setFilter('meeting')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              filter === 'meeting' ? 'text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-            style={filter === 'meeting' ? { backgroundColor: accentColor } : {}}
-          >
-            Meetings
+            <CheckCheck size={14} /> Mark all read
           </button>
         </div>
       </div>
 
       {/* Notifications List */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-        {filteredNotifications.length > 0 ? (
-          <div className="divide-y divide-gray-100 dark:divide-gray-700">
-            {filteredNotifications.map((notification) => {
-              const Icon = notification.icon;
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {loading ? (
+          <div className="p-12 text-center text-gray-400 text-sm">Loading notifications...</div>
+        ) : notifications.length === 0 ? (
+          <div className="p-12 text-center">
+            <Inbox size={48} className="mx-auto text-gray-300 mb-3" />
+            <p className="text-gray-500 font-medium mb-1">No notifications found</p>
+            <p className="text-gray-400 text-sm">You're all caught up!</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-50">
+            {notifications.map((notification) => {
+              const Icon = typeIcons[notification.type] || Bell;
+              const isUnread = !notification.readAt;
               return (
                 <div
                   key={notification.id}
-                  className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
-                    notification.unread ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''
+                  className={`px-6 py-4 flex items-start gap-4 hover:bg-gray-50 transition-colors ${
+                    isUnread ? 'bg-blue-50/30' : ''
                   }`}
                 >
-                  <div className="flex items-start gap-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${colorClasses[notification.color]}`}>
-                      <Icon size={20} />
+                  <input
+                    type="checkbox"
+                    checked={selected.has(notification.id)}
+                    onChange={() => toggleSelect(notification.id)}
+                    className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${priorityColors[notification.priority] || 'text-gray-500 bg-gray-100'}`}>
+                    <Icon size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className={`text-sm ${isUnread ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>{notification.title}</h3>
+                      {isUnread && <span className="w-2 h-2 rounded-full bg-blue-500" />}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-1">
-                        <h3 className={`text-sm ${notification.unread ? 'font-bold text-gray-800 dark:text-white' : 'font-semibold text-gray-700 dark:text-gray-300'}`}>
-                          {notification.title}
-                        </h3>
-                        <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap ml-2">{notification.time}</span>
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{notification.message}</p>
-                      <div className="flex items-center gap-2">
-                        {notification.unread && (
-                          <button
-                            onClick={() => markAsRead(notification.id)}
-                            className="text-xs font-medium hover:opacity-80 transition-opacity"
-                            style={{ color: accentColor }}
-                          >
-                            Mark as read
-                          </button>
-                        )}
-                        <button
-                          onClick={() => deleteNotification(notification.id)}
-                          className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium"
-                        >
-                          Delete
-                        </button>
-                      </div>
+                    <p className="text-sm text-gray-500 mt-0.5">{notification.message}</p>
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className="text-xs text-gray-400">{getRelativeTime(notification.createdAt)}</span>
+                      {notification.entityType && (
+                        <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">{notification.entityType}</span>
+                      )}
+                      <span className={`text-xs px-2 py-0.5 rounded ${priorityColors[notification.priority]}`}>
+                        {priorityLabels[notification.priority]}
+                      </span>
                     </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {isUnread && (
+                      <button
+                        onClick={() => markAsRead(notification.id)}
+                        className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Mark as read"
+                      >
+                        <Check size={14} />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => deleteNotification(notification.id)}
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
               );
             })}
           </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Bell className="text-gray-400 dark:text-gray-500" size={40} />
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+            <span className="text-sm text-gray-500">Page {page} of {totalPages}</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
             </div>
-            <p className="text-gray-500 dark:text-gray-400">No notifications found</p>
           </div>
         )}
       </div>

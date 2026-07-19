@@ -10,10 +10,33 @@ export default function ForgotPassword() {
   const { accentColor } = useAppearance();
   const [email, setEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitted(true);
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setIsSubmitted(true);
+      } else {
+        setError(data.message || 'Failed to send reset email');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,6 +70,13 @@ export default function ForgotPassword() {
                   </p>
                 </div>
 
+                {/* Error Message */}
+                {error && (
+                  <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-sm">
+                    {error}
+                  </div>
+                )}
+
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div>
@@ -70,10 +100,11 @@ export default function ForgotPassword() {
 
                   <button
                     type="submit"
-                    className="w-full text-white py-3 rounded-xl font-medium hover:opacity-90 transition-all shadow-lg"
+                    disabled={loading}
+                    className="w-full text-white py-3 rounded-xl font-medium hover:opacity-90 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ backgroundColor: accentColor }}
                   >
-                    Reset Password
+                    {loading ? 'Sending...' : 'Reset Password'}
                   </button>
                 </form>
 
@@ -111,7 +142,7 @@ export default function ForgotPassword() {
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     Didn't receive the email?{' '}
                     <button 
-                      onClick={() => setIsSubmitted(false)}
+                      onClick={() => { setIsSubmitted(false); setEmail(''); }}
                       className="font-medium hover:opacity-80"
                       style={{ color: accentColor }}
                     >

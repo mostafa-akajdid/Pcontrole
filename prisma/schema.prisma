@@ -1,0 +1,365 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum ProjectStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+}
+
+// =============================================================================
+// ROLES & PERMISSIONS
+// =============================================================================
+
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String?
+  isSystem    Boolean      @default(false)
+  permissions Permission[] @relation("RolePermissions")
+  users       User[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  module      String
+  action      String
+  description String?
+  roles       Role[]   @relation("RolePermissions")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([module, action])
+  @@index([module])
+  @@map("permissions")
+}
+
+// =============================================================================
+// USERS
+// =============================================================================
+
+model User {
+  id                String     @id @default(uuid())
+  name              String
+  email             String     @unique
+  password          String
+  avatar            String?
+  bio               String?
+  phone             String?
+  roleId            String
+  role              Role       @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  emailVerified     Boolean    @default(false)
+  verificationToken String?
+  resetToken        String?
+  resetTokenExpiry  DateTime?
+  status            UserStatus @default(ACTIVE)
+  lastLoginAt       DateTime?
+  forcePasswordChange Boolean @default(false)
+  deletedAt         DateTime?
+  activityLogs      ActivityLog[]
+  projects          Project[]
+  blogs             Blog[]
+  media             Media[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  @@index([deletedAt])
+  @@index([status, roleId])
+  @@map("users")
+}
+
+// =============================================================================
+// SETTINGS
+// =============================================================================
+
+model Setting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  group       String
+  type        String   @default("text")
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([group])
+  @@map("settings")
+}
+
+// =============================================================================
+// ACTIVITY LOGS
+// =============================================================================
+
+model ActivityLog {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  action     String
+  entityType String
+  entityId   String
+  details    Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+// =============================================================================
+// PROJECT CATEGORIES
+// =============================================================================
+
+model ProjectCategory {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String
+  description String?
+  deletedAt   DateTime?
+  projects    Project[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([name, deletedAt])
+  @@unique([slug, deletedAt])
+  @@index([deletedAt])
+  @@map("project_categories")
+}
+
+// =============================================================================
+// PROJECTS
+// =============================================================================
+
+model Project {
+  id              String   @id @default(uuid())
+  title           String
+  slug            String   @unique
+  shortDescription String?
+  fullDescription String?  @db.Text
+  coverImage      String?
+  featured        Boolean  @default(false)
+  status          ProjectStatus @default(DRAFT)
+  client          String?
+  location        String?
+  year            Int?
+  metaTitle       String?
+  metaDescription String?
+  authorId        String
+  author          User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  categories      ProjectCategory[]
+  images          ProjectImage[]
+  publishedAt     DateTime?
+  deletedAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([deletedAt, status])
+  @@index([deletedAt, featured])
+  @@index([authorId])
+  @@index([createdAt])
+  @@map("projects")
+}
+
+// =============================================================================
+// PROJECT IMAGES
+// =============================================================================
+
+model ProjectImage {
+  id        String   @id @default(uuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  url       String
+  publicId  String?
+  altText   String?
+  caption   String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([projectId, sortOrder])
+  @@map("project_images")
+}
+
+// =============================================================================
+// BLOG CATEGORIES
+// =============================================================================
+
+model BlogCategory {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String
+  description String?
+  deletedAt   DateTime?
+  blogs       Blog[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([name, deletedAt])
+  @@unique([slug, deletedAt])
+  @@index([deletedAt])
+  @@map("blog_categories")
+}
+
+// =============================================================================
+// BLOGS
+// =============================================================================
+
+model Blog {
+  id              String     @id @default(uuid())
+  title           String
+  slug            String     @unique
+  excerpt         String?
+  content         String?    @db.Text
+  coverImage      String?
+  featured        Boolean    @default(false)
+  status          BlogStatus @default(DRAFT)
+  metaTitle       String?
+  metaDescription String?
+  authorId        String
+  author          User       @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  categories      BlogCategory[]
+  images          BlogImage[]
+  publishedAt     DateTime?
+  deletedAt       DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([deletedAt, status])
+  @@index([deletedAt, featured])
+  @@index([authorId])
+  @@index([createdAt])
+  @@map("blogs")
+}
+
+// =============================================================================
+// BLOG IMAGES
+// =============================================================================
+
+model BlogImage {
+  id        String   @id @default(uuid())
+  blogId    String
+  blog      Blog     @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  url       String
+  publicId  String?
+  altText   String?
+  caption   String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([blogId, sortOrder])
+  @@map("blog_images")
+}
+
+// =============================================================================
+// MEDIA
+// =============================================================================
+
+model Media {
+  id             String   @id @default(uuid())
+  fileName       String
+  originalName   String
+  publicId       String   @unique
+  url            String
+  secureUrl      String
+  width          Int?
+  height         Int?
+  format         String
+  fileSize       Int
+  mimeType       String
+  altText        String?
+  caption        String?
+  folder         String   @default("general")
+  uploadedById  String
+  uploadedBy    User     @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  deletedAt      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([deletedAt])
+  @@index([folder])
+  @@index([format])
+  @@index([uploadedById])
+  @@index([createdAt])
+  @@map("media")
+}
+
+// =============================================================================
+// NOTIFICATIONS
+// =============================================================================
+
+model Notification {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       String
+  title      String
+  message    String
+  entityType String?
+  entityId   String?
+  priority   String    @default("LOW")
+  readAt     DateTime?
+  deletedAt  DateTime?
+  metadata   Json?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@index([userId, deletedAt])
+  @@index([entityType, entityId])
+  @@index([type])
+  @@map("notifications")
+}
+
+// =============================================================================
+// AUDIT LOGS
+// =============================================================================
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  action     String
+  module     String
+  entityType String
+  entityId   String?
+  oldValues  Json?
+  newValues  Json?
+  ipAddress  String?
+  userAgent  String?
+  requestId  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([module])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

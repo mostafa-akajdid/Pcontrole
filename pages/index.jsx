@@ -4,20 +4,35 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAppearance } from '@/contexts/AppearanceContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Login() {
   const router = useRouter();
   const { accentColor } = useAppearance();
+  const { login, loading: authLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simulate login - redirect to dashboard
-    router.push('/dashboard');
+    setError('');
+    setLoading(true);
+
+    try {
+      const result = await login(formData.email, formData.password);
+      if (!result.success) {
+        setError(result.message);
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -44,6 +59,13 @@ export default function Login() {
               <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Welcome back</h1>
               <p className="text-gray-500 dark:text-gray-400">Please enter your details to sign in</p>
             </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-sm">
+                {error}
+              </div>
+            )}
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -112,10 +134,11 @@ export default function Login() {
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full text-white py-3 rounded-xl font-medium hover:opacity-90 transition-all shadow-lg"
+                disabled={loading}
+                className="w-full text-white py-3 rounded-xl font-medium hover:opacity-90 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: accentColor }}
               >
-                Sign In
+                {loading ? 'Signing in...' : 'Sign In'}
               </button>
 
               {/* Divider */}

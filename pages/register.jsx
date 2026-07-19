@@ -4,10 +4,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Mail, Lock, Eye, EyeOff, User } from 'lucide-react';
 import { useAppearance } from '@/contexts/AppearanceContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Register() {
   const router = useRouter();
   const { accentColor } = useAppearance();
+  const { register } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -16,11 +18,30 @@ export default function Register() {
     password: '',
     confirmPassword: ''
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simulate registration - redirect to verification
-    router.push('/verification');
+    setError('');
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const result = await register(formData.name, formData.email, formData.password, formData.confirmPassword);
+      if (!result.success) {
+        setError(result.message);
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleFocus = (e) => {
@@ -109,6 +130,13 @@ export default function Register() {
               <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Create an account</h1>
               <p className="text-gray-500 dark:text-gray-400">Get started with your free account</p>
             </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-sm">
+                {error}
+              </div>
+            )}
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -216,23 +244,24 @@ export default function Register() {
                 />
                 <span className="text-sm text-gray-600 dark:text-gray-400">
                   I agree to the{' '}
-                  <Link href="/terms" className="font-medium hover:opacity-80" style={{ color: accentColor }}>
+                  <span className="font-medium hover:opacity-80" style={{ color: accentColor }}>
                     Terms of Service
-                  </Link>
+                  </span>
                   {' '}and{' '}
-                  <Link href="/privacy" className="font-medium hover:opacity-80" style={{ color: accentColor }}>
+                  <span className="font-medium hover:opacity-80" style={{ color: accentColor }}>
                     Privacy Policy
-                  </Link>
+                  </span>
                 </span>
               </label>
 
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full text-white py-3 rounded-xl font-medium hover:opacity-90 transition-all shadow-lg"
+                disabled={loading}
+                className="w-full text-white py-3 rounded-xl font-medium hover:opacity-90 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: accentColor }}
               >
-                Create Account
+                {loading ? 'Creating account...' : 'Create Account'}
               </button>
 
               {/* Divider */}

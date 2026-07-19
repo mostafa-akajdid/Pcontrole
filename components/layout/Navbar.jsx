@@ -1,18 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, Menu, X, User, Settings, LogOut } from 'lucide-react';
+import { Search, Menu, User, Settings, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import EmailDropdown from './EmailDropdown';
-import NotificationDropdown from './NotificationDropdown';
+import NotificationBadge from '@/components/notifications/NotificationBadge';
+import CommandPalette from '@/components/ui/CommandPalette';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Navbar({ toggleSidebar }) {
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchClosing, setSearchClosing] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileClosing, setProfileClosing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const { user, logout } = useAuth();
 
   const emailDropdownRef = useRef(null);
-  const notificationDropdownRef = useRef(null);
   const profileRef = useRef(null);
 
   const closeWithAnimation = (setter, closingSetter) => {
@@ -20,7 +20,7 @@ export default function Navbar({ toggleSidebar }) {
     setTimeout(() => {
       setter(false);
       closingSetter(false);
-    }, 200); // Match animation duration
+    }, 200);
   };
 
   useEffect(() => {
@@ -36,20 +36,22 @@ export default function Navbar({ toggleSidebar }) {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        setSearchOpen(true);
-        setSearchClosing(false);
+        setPaletteOpen((prev) => !prev);
       }
       if (e.key === 'Escape') {
-        if (searchOpen) closeWithAnimation(setSearchOpen, setSearchClosing);
         if (profileOpen) closeWithAnimation(setProfileOpen, setProfileClosing);
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [searchOpen, profileOpen]);
+  }, [profileOpen]);
+
+  const userName = user?.name || 'User';
+  const userEmail = user?.email || '';
+  const userAvatar = user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=e5e7eb&color=6b7280&bold=true`;
 
   return (
     <>
@@ -62,12 +64,8 @@ export default function Navbar({ toggleSidebar }) {
             <Menu size={20} />
           </button>
           
-          {/* Search Bar - Desktop */}
           <button
-            onClick={() => {
-              setSearchOpen(true);
-              setSearchClosing(false);
-            }}
+            onClick={() => setPaletteOpen(true)}
             className="relative flex-1 max-w-md text-left hidden min-[425px]:block"
           >
             <Search 
@@ -75,28 +73,23 @@ export default function Navbar({ toggleSidebar }) {
               size={18} 
             />
             <div className="w-full pl-10 pr-12 py-3 bg-white rounded-full text-sm shadow-sm border-none cursor-pointer hover:shadow-md transition-shadow">
-              <span className="text-gray-400">Search task</span>
+              <span className="text-gray-400">Search everything...</span>
             </div>
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-              <span className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500 font-medium">
-                ⌘ F
-              </span>
+              <kbd className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500 font-medium">
+                ⌘K
+              </kbd>
             </div>
           </button>
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Search Button - Mobile */}
           <button
-            onClick={() => {
-              setSearchOpen(true);
-              setSearchClosing(false);
-            }}
+            onClick={() => setPaletteOpen(true)}
             className="p-2.5 bg-white rounded-full shadow-sm hover:bg-gray-50 text-gray-500 transition-all duration-200 hover:shadow-md min-[425px]:hidden"
           >
             <Search size={18} />
           </button>
-          {/* Email Dropdown */}
           <EmailDropdown 
             ref={emailDropdownRef}
             onOpen={() => {
@@ -105,23 +98,14 @@ export default function Navbar({ toggleSidebar }) {
             }}
           />
           
-          {/* Notification Dropdown */}
-          <NotificationDropdown 
-            ref={notificationDropdownRef}
-            onOpen={() => {
-              setProfileOpen(false);
-              setProfileClosing(false);
-            }}
-          />
+          <NotificationBadge />
           
-          {/* Profile Dropdown */}
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => {
                 if (profileOpen) {
                   closeWithAnimation(setProfileOpen, setProfileClosing);
                 } else {
-                  // Open profile
                   setProfileOpen(true);
                   setProfileClosing(false);
                 }
@@ -129,13 +113,13 @@ export default function Navbar({ toggleSidebar }) {
               className="flex items-center gap-3 pl-2 hover:opacity-80 transition-opacity"
             >
               <img 
-                src="https://i.pravatar.cc/150?u=8" 
-                alt="Profile" 
+                src={userAvatar} 
+                alt={userName} 
                 className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" 
               />
               <div className="hidden md:block text-left">
-                <p className="text-sm font-bold text-gray-800">Totok Michael</p>
-                <p className="text-xs text-gray-400">tmichael20@mail.com</p>
+                <p className="text-sm font-bold text-gray-800">{userName}</p>
+                <p className="text-xs text-gray-400">{userEmail}</p>
               </div>
             </button>
 
@@ -144,8 +128,13 @@ export default function Navbar({ toggleSidebar }) {
                 profileClosing ? 'animate-dropdownSlideOut' : 'animate-dropdownSlideIn'
               }`}>
                 <div className="p-4 border-b border-gray-100 dark:border-gray-700">
-                  <p className="font-semibold text-gray-800 dark:text-gray-200">Totok Michael</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">tmichael20@mail.com</p>
+                  <p className="font-semibold text-gray-800 dark:text-gray-200">{userName}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{userEmail}</p>
+                  {user?.role && (
+                    <span className="inline-block mt-1 px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-medium rounded-full">
+                      {user.role.name}
+                    </span>
+                  )}
                 </div>
                 <div className="py-2">
                   <Link href="/dashboard/settings" className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors">
@@ -158,10 +147,10 @@ export default function Navbar({ toggleSidebar }) {
                   </Link>
                 </div>
                 <div className="border-t border-gray-100 dark:border-gray-700">
-                  <Link href="/" className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 text-red-600 dark:text-red-400 transition-colors">
+                  <button onClick={() => logout()} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 text-red-600 dark:text-red-400 transition-colors">
                     <LogOut size={18} />
                     <span className="text-sm">Logout</span>
-                  </Link>
+                  </button>
                 </div>
               </div>
             )}
@@ -169,62 +158,7 @@ export default function Navbar({ toggleSidebar }) {
         </div>
       </header>
 
-      {/* Search Modal */}
-      {(searchOpen || searchClosing) && (
-        <div 
-          className={`fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-start justify-center pt-20 px-4 ${
-            searchClosing ? 'animate-fadeOut' : 'animate-fadeIn'
-          }`}
-          onClick={() => closeWithAnimation(setSearchOpen, setSearchClosing)}
-        >
-          <div 
-            className={`bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl ${
-              searchClosing ? 'animate-modalSlideOut' : 'animate-modalSlideIn'
-            }`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-4 border-b border-gray-100 dark:border-gray-700">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
-                <input
-                  type="text"
-                  placeholder="Search tasks, projects, or team members..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  autoFocus
-                  className="w-full pl-12 pr-12 py-3 text-gray-800 dark:text-gray-200 bg-transparent focus:outline-none"
-                />
-                <button
-                  onClick={() => closeWithAnimation(setSearchOpen, setSearchClosing)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
-            <div className="p-4 max-h-96 overflow-y-auto">
-              {searchQuery ? (
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Search results for "{searchQuery}"</p>
-                  <div className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors duration-150">
-                    <p className="font-medium text-gray-800 dark:text-gray-200">Design new landing page</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Task • Website Redesign</p>
-                  </div>
-                  <div className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors duration-150">
-                    <p className="font-medium text-gray-800 dark:text-gray-200">Website Redesign</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Project • 12 tasks</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Search className="mx-auto text-gray-300 dark:text-gray-600 mb-3" size={48} />
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">Start typing to search...</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </>
   );
 }

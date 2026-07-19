@@ -56,19 +56,15 @@ export default function Tasks() {
   }, [openMenuId]);
 
   const handleCreateProject = (projectData) => {
-    console.log('Creating project:', projectData);
     setShowAddProject(false);
   };
 
   const handleCreateTask = (taskData) => {
-    console.log('Creating task:', taskData);
     setShowAddTask(false);
   };
 
   const handleMenuAction = (action, taskId) => {
-    console.log(`Action: ${action} for task ID: ${taskId}`);
     setOpenMenuId(null);
-    // Add your action handlers here
   };
 
   const filteredTasks = taskData.filter(task => {

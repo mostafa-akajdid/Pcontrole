@@ -1,20 +1,40 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { analyticsData } from '@/data/mockData';
 import { useAppearance } from '@/contexts/AppearanceContext';
 
-export default function AnalyticsChart() {
+export default function AnalyticsChart({ data }) {
   const { accentColor } = useAppearance();
+  const trendData = data?.activityTrend?.slice(-14) || [];
   
+  const chartData = trendData.map(d => ({
+    name: new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' }),
+    count: d.count,
+    date: d.date,
+  }));
+
+  if (chartData.length === 0) {
+    return (
+      <div className="h-[400px] flex flex-col bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
+        <div className="mb-6 shrink-0">
+          <h3 className="font-bold text-lg text-gray-800 dark:text-gray-200">Activity Analytics</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Daily activity over the last 2 weeks</p>
+        </div>
+        <div className="flex-1 min-h-0 flex items-center justify-center text-gray-400 text-sm">
+          No activity data yet
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="lg:col-span-5 bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
-      <div className="mb-6">
-        <h3 className="font-bold text-lg text-gray-800 dark:text-gray-200">Project Analytics</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Weekly project completion overview</p>
+    <div className="h-[400px] flex flex-col bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
+      <div className="mb-6 shrink-0">
+        <h3 className="font-bold text-lg text-gray-800 dark:text-gray-200">Activity Analytics</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Daily activity over the last 2 weeks</p>
       </div>
       
-      <div className="h-48 w-full">
+      <div className="flex-1 min-h-0 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={analyticsData}>
+          <BarChart data={chartData}>
             <CartesianGrid 
               strokeDasharray="3 3" 
               vertical={false} 
@@ -27,66 +47,29 @@ export default function AnalyticsChart() {
               tick={{fill: '#9ca3af', fontSize: 12}} 
               dy={10} 
             />
+            <YAxis 
+              axisLine={false} 
+              tickLine={false} 
+              tick={{fill: '#9ca3af', fontSize: 12}}
+              allowDecimals={false}
+            />
             <Tooltip 
               cursor={{fill: 'transparent'}} 
               contentStyle={{
                 borderRadius: '12px', 
                 border: 'none', 
                 boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-              }} 
+              }}
+              formatter={(value) => [`${value} actions`, 'Activity']}
+              labelFormatter={(label) => label}
             />
-            <Bar dataKey="uv" radius={[20, 20, 20, 20]} barSize={32}>
-              {analyticsData.map((entry, index) => {
-                if (entry.type === 'stripe') {
-                  return (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill="url(#stripePattern)" 
-                      stroke="#9ca3af" 
-                      strokeWidth={1} 
-                      strokeDasharray="4 4" 
-                      fillOpacity={0.1} 
-                    />
-                  );
-                }
-                if (entry.name === 'T' && entry.uv === 50) {
-                  return <Cell key={`cell-${index}`} fill="#4ade80" />;
-                }
-                return <Cell key={`cell-${index}`} fill={accentColor} />;
-              })}
+            <Bar dataKey="count" radius={[20, 20, 20, 20]} barSize={28} fill={accentColor}>
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fillOpacity={0.8 + (index / chartData.length) * 0.2} />
+              ))}
             </Bar>
-            <defs>
-              <pattern 
-                id="stripePattern" 
-                patternUnits="userSpaceOnUse" 
-                width="4" 
-                height="4"
-              >
-                <path 
-                  d="M-1,1 l2,-2 M0,4 l4,-4 M3,5 l2,-2" 
-                  stroke="#9ca3af" 
-                  strokeWidth="1" 
-                />
-              </pattern>
-            </defs>
           </BarChart>
         </ResponsiveContainer>
-      </div>
-
-      {/* Legend */}
-      <div className="flex items-center justify-center gap-6 mt-4">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: accentColor }}></div>
-          <span className="text-xs text-gray-600 dark:text-gray-400">Completed</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-[#4ade80]"></div>
-          <span className="text-xs text-gray-600 dark:text-gray-400">In Progress</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full border-2 border-dashed border-gray-400 dark:border-gray-500"></div>
-          <span className="text-xs text-gray-600 dark:text-gray-400">Planned</span>
-        </div>
       </div>
     </div>
   );

@@ -113,7 +113,6 @@ export default function Team() {
   };
 
   const confirmRemoveMember = () => {
-    console.log('Removing member:', selectedMember);
     setShowConfirmDelete(false);
     setSelectedMember(null);
   };
@@ -288,7 +287,6 @@ export default function Team() {
         isOpen={showAddMember}
         onClose={() => setShowAddMember(false)}
         onSubmit={(memberData) => {
-          console.log('Adding member:', memberData);
           setShowAddMember(false);
         }}
       />
@@ -298,7 +296,6 @@ export default function Team() {
         isOpen={showEditMember}
         onClose={() => setShowEditMember(false)}
         onSubmit={(memberData) => {
-          console.log('Editing member:', memberData);
           setShowEditMember(false);
         }}
         initialData={selectedMember}

@@ -1,22 +1,26 @@
 import { 
   LayoutDashboard, 
-  CheckSquare, 
-  Calendar, 
-  BarChart2, 
-  Users, 
   FolderKanban,
+  FileText,
+  Image,
+  Users,
+  Shield,
   Settings, 
   HelpCircle, 
   LogOut,
+  Bell,
+  ClipboardList,
   X
 } from 'lucide-react';
 import { useRouter } from 'next/router';
 import SidebarItem from '@/components/ui/SidebarItem';
 import { useAppearance } from '@/contexts/AppearanceContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Sidebar({ isOpen, toggleSidebar }) {
   const router = useRouter();
   const { accentColor } = useAppearance();
+  const { hasPermission, isAdmin, logout } = useAuth();
   
   return (
     <aside 
@@ -25,7 +29,6 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
       }`}
     >
       <div className="h-full flex flex-col p-6 overflow-y-auto">
-        {/* Logo */}
         <div className="flex items-center gap-3 mb-10">
           <div 
             className="w-8 h-8 rounded-full border-4 flex items-center justify-center"
@@ -39,7 +42,6 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
           </button>
         </div>
 
-        {/* Menu */}
         <div className="space-y-6 flex-1">
           <div>
             <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-4 px-4">MENU</p>
@@ -49,71 +51,109 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
               href="/dashboard" 
               active={router.pathname === '/dashboard'} 
             />
-            <SidebarItem 
-              icon={FolderKanban} 
-              label="Projects" 
-              href="/dashboard/projects" 
-              count="24" 
-              active={router.pathname === '/dashboard/projects'} 
-            />
-            <SidebarItem 
-              icon={CheckSquare} 
-              label="Tasks" 
-              href="/dashboard/tasks" 
-              count="12+" 
-              active={router.pathname === '/dashboard/tasks'} 
-            />
-            <SidebarItem 
-              icon={Calendar} 
-              label="Calendar" 
-              href="/dashboard/calendar" 
-              active={router.pathname === '/dashboard/calendar'} 
-            />
-            <SidebarItem 
-              icon={BarChart2} 
-              label="Analytics" 
-              href="/dashboard/analytics" 
-              active={router.pathname === '/dashboard/analytics'} 
-            />
-            <SidebarItem 
-              icon={Users} 
-              label="Team" 
-              href="/dashboard/team" 
-              active={router.pathname === '/dashboard/team'} 
-            />
+            {hasPermission('projects.read') && (
+              <SidebarItem 
+                icon={FolderKanban} 
+                label="Projects" 
+                href="/dashboard/projects" 
+                active={router.pathname === '/dashboard/projects'} 
+              />
+            )}
+            {hasPermission('blogs.read') && (
+              <SidebarItem 
+                icon={FileText} 
+                label="Blogs" 
+                href="/dashboard/blogs" 
+                active={router.pathname === '/dashboard/blogs'} 
+              />
+            )}
+            {hasPermission('media.read') && (
+              <SidebarItem 
+                icon={Image} 
+                label="Media" 
+                href="/dashboard/media" 
+                active={router.pathname === '/dashboard/media'} 
+              />
+            )}
           </div>
+
+          {(hasPermission('users.read') || hasPermission('roles.read')) && (
+            <div>
+              <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-4 px-4">MANAGEMENT</p>
+              {hasPermission('users.read') && (
+                <SidebarItem 
+                  icon={Users} 
+                  label="Users" 
+                  href="/dashboard/users" 
+                  active={router.pathname === '/dashboard/users'} 
+                />
+              )}
+              {hasPermission('roles.read') && (
+                <SidebarItem 
+                  icon={Shield} 
+                  label="Roles" 
+                  href="/dashboard/roles" 
+                  active={router.pathname === '/dashboard/roles'} 
+                />
+              )}
+            </div>
+          )}
+
+          {(hasPermission('notifications.read') || hasPermission('audit.view')) && (
+            <div>
+              <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-4 px-4">ACTIVITY</p>
+              {hasPermission('notifications.read') && (
+                <SidebarItem 
+                  icon={Bell} 
+                  label="Notifications" 
+                  href="/dashboard/notifications" 
+                  active={router.pathname === '/dashboard/notifications'} 
+                />
+              )}
+              {hasPermission('audit.view') && (
+                <SidebarItem 
+                  icon={ClipboardList} 
+                  label="Audit Log" 
+                  href="/dashboard/audit" 
+                  active={router.pathname === '/dashboard/audit'} 
+                />
+              )}
+            </div>
+          )}
           
           <div>
             <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-4 px-4">GENERAL</p>
-            <SidebarItem 
-              icon={Settings} 
-              label="Settings" 
-              href="/dashboard/settings" 
-              active={router.pathname === '/dashboard/settings'} 
-            />
+            {hasPermission('settings.read') && (
+              <SidebarItem 
+                icon={Settings} 
+                label="Settings" 
+                href="/dashboard/settings" 
+                active={router.pathname === '/dashboard/settings'} 
+              />
+            )}
             <SidebarItem 
               icon={HelpCircle} 
               label="Help" 
               href="/dashboard/help" 
               active={router.pathname === '/dashboard/help'} 
             />
-            <SidebarItem 
-              icon={LogOut} 
-              label="Logout" 
-              href="/" 
-              active={false} 
-            />
+            <div onClick={() => logout()} className="cursor-pointer">
+              <SidebarItem 
+                icon={LogOut} 
+                label="Logout" 
+                href="/" 
+                active={false} 
+              />
+            </div>
           </div>
         </div>
 
-        {/* Promo Card */}
         <div 
           className="mt-6 relative overflow-hidden rounded-3xl p-6 text-white shadow-xl min-h-[270px]"
           style={{ 
             background: `linear-gradient(135deg, ${accentColor}dd 0%, ${accentColor} 50%, ${accentColor}cc 100%)`
           }}
         >
-          {/* Decorative curved lines */}
           <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
             <path d="M0,80 Q60,120 120,80 T240,80" fill="none" stroke="white" strokeWidth="1.5" />
             <path d="M0,100 Q60,140 120,100 T240,100" fill="none" stroke="white" strokeWidth="1.5" />
@@ -122,7 +162,6 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
           </svg>
           
           <div className="relative z-10 flex flex-col h-full">
-            {/* Icon with badge */}
             <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mb-4 shadow-lg flex-shrink-0">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: accentColor }}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />

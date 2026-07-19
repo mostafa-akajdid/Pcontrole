@@ -9,7 +9,8 @@ export default function ConfirmDialog({
   message = 'Are you sure you want to proceed?',
   confirmText = 'Confirm',
   cancelText = 'Cancel',
-  type = 'danger' // 'danger' or 'warning' or 'info'
+  type = 'danger', // 'danger' or 'warning' or 'info'
+  loading = false
 }) {
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -45,9 +46,13 @@ export default function ConfirmDialog({
     setTimeout(() => onClose(), 300);
   };
 
-  const handleConfirm = () => {
-    setIsAnimating(false);
-    setTimeout(() => onConfirm(), 300);
+  const handleConfirm = async () => {
+    try {
+      await onConfirm();
+      handleClose();
+    } catch {
+      // dialog stays open; caller handles error display
+    }
   };
 
   return (
@@ -83,13 +88,15 @@ export default function ConfirmDialog({
             <div className="flex gap-3">
               <button
                 onClick={handleConfirm}
-                className={`flex-1 text-white py-2.5 rounded-lg font-medium transition-colors ${style.button}`}
+                disabled={loading}
+                className={`flex-1 text-white py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${style.button}`}
               >
-                {confirmText}
+                {loading ? 'Please wait...' : confirmText}
               </button>
               <button
                 onClick={handleClose}
-                className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                disabled={loading}
+                className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {cancelText}
               </button>

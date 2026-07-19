@@ -4,12 +4,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Mail } from 'lucide-react';
 import { useAppearance } from '@/contexts/AppearanceContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Verification() {
   const router = useRouter();
   const { accentColor } = useAppearance();
+  const { user } = useAuth();
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const inputRefs = useRef([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
@@ -52,18 +56,44 @@ export default function Verification() {
     inputRefs.current[nextIndex]?.focus();
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const verificationCode = code.join('');
     if (verificationCode.length === 6) {
-      // Simulate verification - redirect to dashboard
-      router.push('/dashboard');
+      setLoading(true);
+      setError('');
+
+      try {
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch('/api/auth/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ code: verificationCode }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          router.push('/dashboard');
+        } else {
+          setError(data.message || 'Invalid verification code');
+        }
+      } catch (err) {
+        setError('An unexpected error occurred');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     setCode(['', '', '', '', '', '']);
+    setError('');
     inputRefs.current[0]?.focus();
+    // TODO: Implement resend functionality
   };
 
   return (
@@ -92,9 +122,16 @@ export default function Verification() {
               <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Verify your email</h1>
               <p className="text-gray-500 dark:text-gray-400 text-sm">
                 We sent a verification code to<br />
-                <span className="font-medium text-gray-700 dark:text-gray-300">your@email.com</span>
+                <span className="font-medium text-gray-700 dark:text-gray-300">{user?.email || 'your email'}</span>
               </p>
             </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-sm">
+                {error}
+              </div>
+            )}
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -125,11 +162,11 @@ export default function Verification() {
 
               <button
                 type="submit"
-                disabled={code.join('').length !== 6}
+                disabled={code.join('').length !== 6 || loading}
                 className="w-full text-white py-3 rounded-xl font-medium hover:opacity-90 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: accentColor }}
               >
-                Verify Email
+                {loading ? 'Verifying...' : 'Verify Email'}
               </button>
             </form>
 
