@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 const DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 2;
@@ -125,9 +125,9 @@ export function useGlobalSearch() {
     setRecentSearches([]);
   }, []);
 
-  const flatResults = results?.groups
+  const flatResults = useMemo(() => results?.groups
     ? Object.values(results.groups).flat()
-    : [];
+    : [], [results]);
 
   const selectNext = useCallback(() => {
     setSelectedIndex((prev) => (prev < flatResults.length - 1 ? prev + 1 : 0));

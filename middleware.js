@@ -15,6 +15,9 @@ const API_PUBLIC_ROUTES = [
   '/api/auth/reset-password',
 ];
 
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET_KEY = JWT_SECRET ? new TextEncoder().encode(JWT_SECRET) : null;
+
 function isPublicRoute(pathname) {
   return PUBLIC_ROUTES.some((route) => pathname === route);
 }
@@ -68,7 +71,6 @@ export async function middleware(req) {
     return NextResponse.redirect(url);
   }
 
-  const JWT_SECRET = process.env.JWT_SECRET;
   if (!JWT_SECRET) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json(
@@ -82,8 +84,7 @@ export async function middleware(req) {
   }
 
   try {
-    const secret = new TextEncoder().encode(JWT_SECRET);
-    await jwtVerify(token, secret);
+    await jwtVerify(token, JWT_SECRET_KEY);
   } catch {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json(

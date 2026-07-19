@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 
 const AuthContext = createContext(null);
@@ -31,7 +31,7 @@ export function AuthProvider({ children }) {
     fetchUser();
   }, [fetchUser]);
 
-  const login = async (email, password) => {
+  const login = useCallback(async (email, password) => {
     try {
       setError(null);
       const response = await fetch('/api/auth/login', {
@@ -55,9 +55,9 @@ export function AuthProvider({ children }) {
       setError(message);
       return { success: false, message };
     }
-  };
+  }, [router]);
 
-  const register = async (name, email, password, confirmPassword) => {
+  const register = useCallback(async (name, email, password, confirmPassword) => {
     try {
       setError(null);
       const response = await fetch('/api/auth/register', {
@@ -81,9 +81,9 @@ export function AuthProvider({ children }) {
       setError(message);
       return { success: false, message };
     }
-  };
+  }, [router]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
     } catch (err) {
@@ -92,27 +92,27 @@ export function AuthProvider({ children }) {
       setUser(null);
       router.push('/');
     }
-  };
+  }, [router]);
 
-  const hasPermission = (permission) => {
+  const hasPermission = useCallback((permission) => {
     if (!user || !user.permissions) return false;
     return user.permissions.includes(permission);
-  };
+  }, [user]);
 
-  const hasAnyPermission = (permissions) => {
+  const hasAnyPermission = useCallback((permissions) => {
     if (!user || !user.permissions) return false;
     return permissions.some((p) => user.permissions.includes(p));
-  };
+  }, [user]);
 
-  const isAdmin = () => {
+  const isAdmin = useCallback(() => {
     return user?.role?.name === 'ADMIN';
-  };
+  }, [user]);
 
-  const isEditor = () => {
-    return user?.role?.name === 'EDITOR' || isAdmin();
-  };
+  const isEditor = useCallback(() => {
+    return user?.role?.name === 'EDITOR' || user?.role?.name === 'ADMIN';
+  }, [user]);
 
-  const value = {
+  const value = useMemo(() => ({
     user,
     loading,
     error,
@@ -125,7 +125,7 @@ export function AuthProvider({ children }) {
     isAdmin,
     isEditor,
     isAuthenticated: !!user,
-  };
+  }), [user, loading, error, login, register, logout, fetchUser, hasPermission, hasAnyPermission, isAdmin, isEditor]);
 
   return (
     <AuthContext.Provider value={value}>

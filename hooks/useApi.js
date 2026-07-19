@@ -24,15 +24,26 @@ export function useApi() {
     setError(null);
 
     try {
-      const { headers: customHeaders, ...restOptions } = options;
+      const { headers: customHeaders, body: requestBody, ...restOptions } = options;
+      const isFormData = requestBody instanceof FormData;
       const response = await fetch(url, {
         headers: {
-          'Content-Type': 'application/json',
+          ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
           ...customHeaders,
         },
+        body: requestBody,
         ...restOptions,
         signal: controller.signal,
       });
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await response.text();
+        if (!response.ok) {
+          throw new Error(text || 'Request failed');
+        }
+        return { success: true, data: text };
+      }
 
       const data = await response.json();
 

@@ -14,10 +14,19 @@ export default function Navbar({ toggleSidebar }) {
 
   const emailDropdownRef = useRef(null);
   const profileRef = useRef(null);
+  const animationTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const closeWithAnimation = (setter, closingSetter) => {
     closingSetter(true);
-    setTimeout(() => {
+    animationTimeoutRef.current = setTimeout(() => {
       setter(false);
       closingSetter(false);
     }, 200);
