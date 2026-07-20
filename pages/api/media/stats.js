@@ -20,13 +20,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    const [stats, folders, formats] = await Promise.all([
+    const [stats, folders, formats, trashStats] = await Promise.all([
       MediaService.getStats(),
       MediaService.getFolders(),
       MediaService.getFormats(),
+      MediaService.getTrashStats(),
     ]);
 
-    return successResponse(res, { stats, folders, formats });
+    return successResponse(res, { stats, folders, formats, trashStats });
   } catch (error) {
     console.error('Media stats error:', error);
     return errorResponse(res, error.message || 'Failed to get media stats', 500);

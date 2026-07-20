@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { MediaService, ActivityService, UserService, CloudinaryService } from '@/lib/services';
+import { MediaService, ActivityService, UserService, CloudinaryService, ImageOptimizationService } from '@/lib/services';
 import { getUserFromRequest } from '@/lib/auth';
 import { successResponse, errorResponse, methodNotAllowed, unauthorizedResponse, forbiddenResponse } from '@/lib/api';
 
@@ -37,6 +37,8 @@ export default async function handler(req, res) {
     const sanitizedFolder = (folder || 'general').replace(/[^a-zA-Z0-9_-]/g, '').substring(0, 100);
 
     let uploadResult;
+    let originalFormat = null;
+    let originalFileSize = null;
 
     if (file.startsWith('data:')) {
       const matches = file.match(/^data:([^;]+);base64,(.+)$/);
@@ -46,17 +48,45 @@ export default async function handler(req, res) {
 
       const mimeType = matches[1];
       const base64Data = matches[2];
-      const buffer = Buffer.from(base64Data, 'base64');
+      let buffer = Buffer.from(base64Data, 'base64');
+      originalFileSize = buffer.length;
 
       const ext = mimeType.split('/')[1] || 'bin';
-      const fileName = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${ext}`;
       const resourceType = mimeType.startsWith('video/') ? 'video' : mimeType.startsWith('image/') ? 'image' : 'raw';
 
-      uploadResult = await CloudinaryService.uploadBuffer(buffer, {
-        folder: `piolec/${sanitizedFolder}`,
-        filename: fileName,
-        resourceType,
-      });
+      if (ImageOptimizationService.isImageMime(mimeType) && ImageOptimizationService.isOptimizable(mimeType)) {
+        try {
+          const optimized = await ImageOptimizationService.optimizeBuffer(buffer, mimeType);
+          buffer = optimized.buffer;
+          originalFormat = optimized.originalFormat;
+
+          const optimizedMimeType = ImageOptimizationService.getMimeTypeForFormat(optimized.format);
+          const optimizedExt = optimized.format;
+
+          const fileName = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${optimizedExt}`;
+
+          uploadResult = await CloudinaryService.uploadBuffer(buffer, {
+            folder: `piolec/${sanitizedFolder}`,
+            filename: fileName,
+            resourceType: 'image',
+          });
+        } catch (optError) {
+          console.warn('Optimization failed, uploading original:', optError.message);
+          const fileName = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${ext}`;
+          uploadResult = await CloudinaryService.uploadBuffer(buffer, {
+            folder: `piolec/${sanitizedFolder}`,
+            filename: fileName,
+            resourceType,
+          });
+        }
+      } else {
+        const fileName = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${ext}`;
+        uploadResult = await CloudinaryService.uploadBuffer(buffer, {
+          folder: `piolec/${sanitizedFolder}`,
+          filename: fileName,
+          resourceType,
+        });
+      }
     } else if (file.startsWith('http')) {
       uploadResult = await CloudinaryService.uploadFromUrl(file, {
         folder: `piolec/${sanitizedFolder}`,
@@ -74,7 +104,9 @@ export default async function handler(req, res) {
       width: uploadResult.width,
       height: uploadResult.height,
       format: uploadResult.format,
+      originalFormat,
       fileSize: uploadResult.bytes,
+      originalFileSize,
       mimeType: uploadResult.mimeType || `${uploadResult.format === 'mp4' || uploadResult.format === 'webm' ? 'video' : 'image'}/${uploadResult.format || 'octet-stream'}`,
       altText,
       caption,
@@ -87,7 +119,7 @@ export default async function handler(req, res) {
       action: 'UPLOADED',
       entityType: 'Media',
       entityId: media.id,
-      details: { fileName: media.fileName, folder: media.folder, format: media.format },
+      details: { fileName: media.fileName, folder: media.folder, format: media.format, originalFormat },
     });
 
     return successResponse(res, media, 'File uploaded successfully', 201);

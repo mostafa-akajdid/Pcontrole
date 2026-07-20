@@ -77,23 +77,35 @@ async function handleDelete(req, res, id, tokenPayload) {
       return forbiddenResponse(res, 'Insufficient permissions to delete media');
     }
 
-    const media = await MediaService.findByIdOrThrow(id);
+    const { permanent } = req.query;
 
-    await CloudinaryService.delete(media.publicId);
+    if (permanent === 'true') {
+      const result = await MediaService.permanentDelete(id, extractRequestMetadata(req, tokenPayload.userId));
+
+      await ActivityService.log({
+        userId: tokenPayload.userId,
+        action: 'PERMANENT_DELETED',
+        entityType: 'Media',
+        entityId: id,
+        details: { permanentlyDeleted: true, cloudinaryDeleted: result.cloudinaryDeleted },
+      });
+
+      return successResponse(res, null, 'Media permanently deleted');
+    }
 
     const result = await MediaService.delete(id, extractRequestMetadata(req, tokenPayload.userId));
 
     await ActivityService.log({
       userId: tokenPayload.userId,
-      action: 'DELETED',
+      action: 'TRASHED',
       entityType: 'Media',
       entityId: id,
-      details: { fileName: media.fileName },
+      details: { movedToTrash: true },
     });
 
     return successResponse(res, null, result.message);
   } catch (error) {
-    if (error.message === 'Media not found') {
+    if (error.message === 'Media not found' || error.message === 'Trashed media not found') {
       return notFoundResponse(res, error.message);
     }
     console.error('Delete media error:', error);

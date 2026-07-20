@@ -19,6 +19,15 @@ import {
   Folder,
   RotateCcw,
   Move,
+  HardDrive,
+  BarChart3,
+  AlertTriangle,
+  Archive,
+  Layers,
+  CheckCircle,
+  Loader2,
+  Zap,
+  Cloud,
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Button from '@/components/ui/Button';
@@ -40,6 +49,14 @@ function getFormatIcon(format) {
   return File;
 }
 
+const UPLOAD_STEPS = [
+  { key: 'uploading', label: 'Uploading...', icon: Upload },
+  { key: 'compressing', label: 'Compressing...', icon: HardDrive },
+  { key: 'optimizing', label: 'Optimizing...', icon: Zap },
+  { key: 'cloudinary', label: 'Uploading to Cloudinary...', icon: Cloud },
+  { key: 'completed', label: 'Completed', icon: CheckCircle },
+];
+
 export default function MediaPage() {
   const { accentColor } = useAppearance();
   const toast = useToast();
@@ -49,7 +66,8 @@ export default function MediaPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({ page: 1, perPage: 24, total: 0, totalPages: 1, hasNext: false, hasPrev: false });
-  const [stats, setStats] = useState({ total: 0, images: 0, videos: 0, documents: 0, totalSize: 0 });
+  const [stats, setStats] = useState({ total: 0, images: 0, videos: 0, documents: 0, totalSize: 0, trashCount: 0, averageFileSize: 0, webpCount: 0 });
+  const [trashStats, setTrashStats] = useState({ count: 0, totalSize: 0 });
   const [folders, setFolders] = useState([]);
 
   const [search, setSearch] = useState('');
@@ -59,6 +77,7 @@ export default function MediaPage() {
   const [sort, setSort] = useState('createdAt');
   const [order, setOrder] = useState('desc');
   const [viewMode, setViewMode] = useState('grid');
+  const [activeTab, setActiveTab] = useState('library');
 
   const [selectedIds, setSelectedIds] = useState([]);
   const [detailItem, setDetailItem] = useState(null);
@@ -66,11 +85,15 @@ export default function MediaPage() {
   const [editForm, setEditForm] = useState({ altText: '', caption: '', fileName: '', folder: '' });
 
   const [uploading, setUploading] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null });
+  const [uploadStep, setUploadStep] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, permanent: false });
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [bulkPermanentConfirm, setBulkPermanentConfirm] = useState(false);
   const [moveConfirm, setMoveConfirm] = useState(false);
   const [moveFolder, setMoveFolder] = useState('');
   const [restoreConfirm, setRestoreConfirm] = useState({ open: false, item: null });
+  const [deleteAllUnusedConfirm, setDeleteAllUnusedConfirm] = useState(false);
 
   const abortRef = useRef(null);
 
@@ -97,6 +120,8 @@ export default function MediaPage() {
       if (folderFilter) params.set('folder', folderFilter);
       params.set('sort', sort);
       params.set('order', order);
+      if (activeTab === 'trash') params.set('trash', 'true');
+      if (activeTab === 'unused') params.set('unused', 'true');
 
       const res = await fetch(`/api/media?${params.toString()}`, { signal: controller.signal });
       const json = await res.json();
@@ -112,7 +137,7 @@ export default function MediaPage() {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, debouncedSearch, formatFilter, folderFilter, sort, order]);
+  }, [pagination.page, debouncedSearch, formatFilter, folderFilter, sort, order, activeTab]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -120,6 +145,7 @@ export default function MediaPage() {
       const json = await res.json();
       if (json.success) {
         setStats(json.data.stats);
+        setTrashStats(json.data.trashStats || { count: 0, totalSize: 0 });
         setFolders(json.data.folders || []);
       }
     } catch (e) {
@@ -133,7 +159,7 @@ export default function MediaPage() {
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, page: 1 }));
-  }, [debouncedSearch, formatFilter, folderFilter, sort, order]);
+  }, [debouncedSearch, formatFilter, folderFilter, sort, order, activeTab]);
 
   useEffect(() => {
     fetchMedia();
@@ -144,16 +170,31 @@ export default function MediaPage() {
     if (files.length === 0) return;
 
     setUploading(true);
+    setUploadProgress({ current: 0, total: files.length });
     let uploadedCount = 0;
 
-    for (const file of files) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setUploadProgress({ current: i + 1, total: files.length });
+
       try {
+        setUploadStep('uploading');
+        await new Promise((r) => setTimeout(r, 200));
+
         const dataUri = await new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => resolve(reader.result);
           reader.onerror = reject;
           reader.readAsDataURL(file);
         });
+
+        setUploadStep('compressing');
+        await new Promise((r) => setTimeout(r, 150));
+
+        setUploadStep('optimizing');
+        await new Promise((r) => setTimeout(r, 150));
+
+        setUploadStep('cloudinary');
 
         const res = await fetch('/api/media/upload', {
           method: 'POST',
@@ -162,10 +203,17 @@ export default function MediaPage() {
         });
 
         const json = await res.json();
-        if (json.success) uploadedCount++;
-        else toast.error(json.message || `Failed to upload ${file.name}`);
+        if (json.success) {
+          uploadedCount++;
+          setUploadStep('completed');
+          await new Promise((r) => setTimeout(r, 300));
+        } else {
+          toast.error(json.message || `Failed to upload ${file.name}`);
+          setUploadStep(null);
+        }
       } catch {
         toast.error(`Failed to upload ${file.name}`);
+        setUploadStep(null);
       }
     }
 
@@ -175,16 +223,21 @@ export default function MediaPage() {
       fetchStats();
     }
     setUploading(false);
+    setUploadStep(null);
+    setUploadProgress({ current: 0, total: 0 });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleDelete = async (item) => {
+  const handleDelete = async (item, permanent = false) => {
     try {
-      const res = await fetch(`/api/media/${item.id}`, { method: 'DELETE' });
+      const url = permanent
+        ? `/api/media/${item.id}?permanent=true`
+        : `/api/media/${item.id}`;
+      const res = await fetch(url, { method: 'DELETE' });
       const json = await res.json();
       if (json.success) {
-        toast.success('File deleted');
-        setDeleteConfirm({ open: false, item: null });
+        toast.success(permanent ? 'File permanently deleted' : 'File moved to trash');
+        setDeleteConfirm({ open: false, item: null, permanent: false });
         setDetailItem(null);
         fetchMedia();
         fetchStats();
@@ -193,6 +246,28 @@ export default function MediaPage() {
       }
     } catch {
       toast.error('Failed to delete');
+    }
+  };
+
+  const handleRestore = async (item) => {
+    try {
+      const res = await fetch('/api/media/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [item.id], action: 'restore' }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success('File restored');
+        setRestoreConfirm({ open: false, item: null });
+        setDetailItem(null);
+        fetchMedia();
+        fetchStats();
+      } else {
+        toast.error(json.message || 'Failed to restore');
+      }
+    } catch {
+      toast.error('Failed to restore');
     }
   };
 
@@ -206,13 +281,36 @@ export default function MediaPage() {
       });
       const json = await res.json();
       if (json.success) {
-        toast.success('Files deleted');
+        toast.success('Files moved to trash');
         setSelectedIds([]);
         setBulkDeleteConfirm(false);
         fetchMedia();
         fetchStats();
       } else {
         toast.error(json.message || 'Failed to delete');
+      }
+    } catch {
+      toast.error('Something went wrong');
+    }
+  };
+
+  const handleBulkPermanentDelete = async () => {
+    if (selectedIds.length === 0) return;
+    try {
+      const res = await fetch('/api/media/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds, action: 'permanentDelete' }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success('Files permanently deleted');
+        setSelectedIds([]);
+        setBulkPermanentConfirm(false);
+        fetchMedia();
+        fetchStats();
+      } else {
+        toast.error(json.message || 'Failed to permanently delete');
       }
     } catch {
       toast.error('Something went wrong');
@@ -262,6 +360,35 @@ export default function MediaPage() {
       }
     } catch {
       toast.error('Something went wrong');
+    }
+  };
+
+  const handleDeleteAllUnused = async () => {
+    try {
+      const res = await fetch('/api/media?unused=true&perPage=1000');
+      const json = await res.json();
+      if (!json.success || !json.data.items?.length) {
+        toast.success('No unused files found');
+        setDeleteAllUnusedConfirm(false);
+        return;
+      }
+      const ids = json.data.items.map((m) => m.id);
+      const bulkRes = await fetch('/api/media/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, action: 'delete' }),
+      });
+      const bulkJson = await bulkRes.json();
+      if (bulkJson.success) {
+        toast.success(`${ids.length} unused file(s) moved to trash`);
+        setDeleteAllUnusedConfirm(false);
+        fetchMedia();
+        fetchStats();
+      } else {
+        toast.error(bulkJson.message || 'Failed to delete unused files');
+      }
+    } catch {
+      toast.error('Failed to delete unused files');
     }
   };
 
@@ -334,6 +461,9 @@ export default function MediaPage() {
     ...folders.map((f) => ({ value: f.name, label: `${f.name} (${f.count})` })),
   ];
 
+  const isTrashView = activeTab === 'trash';
+  const isUnusedView = activeTab === 'unused';
+
   return (
     <DashboardLayout
       title="Media Library - CMS Management"
@@ -348,20 +478,65 @@ export default function MediaPage() {
         className="hidden"
       />
 
+      {uploading && uploadStep && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50" />
+          <div className="relative bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md shadow-2xl p-8">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: accentColor + '15' }}>
+                {uploadStep === 'completed' ? (
+                  <CheckCircle size={32} style={{ color: accentColor }} />
+                ) : (
+                  <Loader2 size={32} className="animate-spin" style={{ color: accentColor }} />
+                )}
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">
+                {UPLOAD_STEPS.find((s) => s.key === uploadStep)?.label || 'Processing...'}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                File {uploadProgress.current} of {uploadProgress.total}
+              </p>
+              <div className="mt-4 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div
+                  className="h-2 rounded-full transition-all duration-300"
+                  style={{ backgroundColor: accentColor, width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
+                />
+              </div>
+              <div className="mt-6 space-y-2">
+                {UPLOAD_STEPS.map((step, idx) => {
+                  const currentIdx = UPLOAD_STEPS.findIndex((s) => s.key === uploadStep);
+                  const StepIcon = step.icon;
+                  const isDone = idx < currentIdx;
+                  const isCurrent = idx === currentIdx;
+                  return (
+                    <div key={step.key} className={`flex items-center gap-3 text-sm ${isCurrent ? 'text-gray-800 dark:text-white font-medium' : isDone ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
+                      {isDone ? <CheckCircle size={16} /> : isCurrent ? <Loader2 size={16} className="animate-spin" /> : <StepIcon size={16} />}
+                      <span>{step.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-1">Media Library</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm">Manage and organize your digital assets</p>
         </div>
-        <Button
-          variant="primary"
-          icon={Upload}
-          loading={uploading}
-          onClick={() => fileInputRef.current?.click()}
-          style={{ backgroundColor: accentColor }}
-        >
-          Upload Files
-        </Button>
+        {!isTrashView && !isUnusedView && (
+          <Button
+            variant="primary"
+            icon={Upload}
+            loading={uploading}
+            onClick={() => fileInputRef.current?.click()}
+            style={{ backgroundColor: accentColor }}
+          >
+            Upload Files
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
@@ -375,63 +550,115 @@ export default function MediaPage() {
           </div>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 hover:shadow-sm transition-shadow">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Images</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">In Trash</p>
           <div className="flex items-center justify-between">
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.images}</p>
-            <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-              <ImageIcon className="text-blue-500 dark:text-blue-400" size={20} />
+            <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{stats.trashCount}</p>
+            <div className="w-10 h-10 bg-orange-50 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
+              <Trash2 className="text-orange-500 dark:text-orange-400" size={20} />
             </div>
           </div>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 hover:shadow-sm transition-shadow">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Videos</p>
-          <div className="flex items-center justify-between">
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.videos}</p>
-            <div className="w-10 h-10 bg-purple-50 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
-              <Film className="text-purple-500 dark:text-purple-400" size={20} />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 hover:shadow-sm transition-shadow">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Total Size</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Total Storage</p>
           <div className="flex items-center justify-between">
             <p className="text-3xl font-bold text-gray-900 dark:text-white">{formatFileSize(stats.totalSize)}</p>
             <div className="w-10 h-10 bg-green-50 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-              <FileText className="text-green-500 dark:text-green-400" size={20} />
+              <HardDrive className="text-green-500 dark:text-green-400" size={20} />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 hover:shadow-sm transition-shadow">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Avg. File Size</p>
+          <div className="flex items-center justify-between">
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{formatFileSize(stats.averageFileSize)}</p>
+            <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+              <BarChart3 className="text-blue-500 dark:text-blue-400" size={20} />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700 mb-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-            <div className="flex-1 relative min-w-0">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by name, alt text, caption, folder..."
-                className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2"
-              />
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
+        {[
+          { id: 'library', label: 'All Files', icon: Layers, count: stats.total },
+          { id: 'trash', label: 'Trash', icon: Trash2, count: stats.trashCount },
+          { id: 'unused', label: 'Unused', icon: AlertTriangle, count: null },
+        ].map((tab) => {
+          const TabIcon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => { setActiveTab(tab.id); setSelectedIds([]); }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+                activeTab === tab.id
+                  ? 'text-white shadow-md'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-gray-300'
+              }`}
+              style={activeTab === tab.id ? { backgroundColor: accentColor } : {}}
+            >
+              <TabIcon size={16} />
+              {tab.label}
+              {tab.count !== null && (
+                <span className={`px-1.5 py-0.5 text-xs rounded-full ${activeTab === tab.id ? 'bg-white/20' : 'bg-gray-100 dark:bg-gray-700'}`}>
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {!isUnusedView && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700 mb-6">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+              <div className="flex-1 relative min-w-0">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={isTrashView ? 'Search trashed files...' : 'Search by name, alt text, caption, folder...'}
+                  className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2"
+                />
+              </div>
+              {!isTrashView && (
+                <>
+                  <Select options={formatOptions} value={formatFilter} onChange={(e) => setFormatFilter(e.target.value)} className="min-w-[130px]" />
+                  <Select options={folderOptions} value={folderFilter} onChange={(e) => setFolderFilter(e.target.value)} className="min-w-[130px]" />
+                </>
+              )}
+              <Select options={sortOptions} value={`${sort}:${order}`} onChange={(e) => { const [s, o] = e.target.value.split(':'); setSort(s); setOrder(o); }} className="min-w-[140px]" />
             </div>
-            <Select options={formatOptions} value={formatFilter} onChange={(e) => setFormatFilter(e.target.value)} className="min-w-[130px]" />
-            <Select options={folderOptions} value={folderFilter} onChange={(e) => setFolderFilter(e.target.value)} className="min-w-[130px]" />
-            <Select options={sortOptions} value={`${sort}:${order}`} onChange={(e) => { const [s, o] = e.target.value.split(':'); setSort(s); setOrder(o); }} className="min-w-[140px]" />
-          </div>
-          <div className="flex justify-end">
-            <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 gap-1">
-              <button onClick={() => setViewMode('grid')} className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-600 shadow text-gray-800 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`} title="Grid view">
-                <LayoutGrid size={18} />
-              </button>
-              <button onClick={() => setViewMode('table')} className={`p-2 rounded-md transition-all ${viewMode === 'table' ? 'bg-white dark:bg-gray-600 shadow text-gray-800 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`} title="Table view">
-                <List size={18} />
-              </button>
+            <div className="flex justify-end">
+              <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 gap-1">
+                <button onClick={() => setViewMode('grid')} className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-gray-600 shadow text-gray-800 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`} title="Grid view">
+                  <LayoutGrid size={18} />
+                </button>
+                <button onClick={() => setViewMode('table')} className={`p-2 rounded-md transition-all ${viewMode === 'table' ? 'bg-white dark:bg-gray-600 shadow text-gray-800 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`} title="Table view">
+                  <List size={18} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {isUnusedView && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700 mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-orange-500" />
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              Unused images are not referenced by any project or blog.
+            </span>
+          </div>
+          {media.length > 0 && (
+            <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteAllUnusedConfirm(true)}>
+              Delete All Unused
+            </Button>
+          )}
+        </div>
+      )}
 
       {selectedIds.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700 mb-6 flex flex-wrap items-center gap-3">
@@ -439,8 +666,17 @@ export default function MediaPage() {
             {selectedIds.length} file{selectedIds.length !== 1 ? 's' : ''} selected
           </span>
           <div className="flex gap-2 flex-wrap">
-            <Button variant="secondary" size="sm" icon={RotateCcw} onClick={() => setMoveConfirm(true)}>Move</Button>
-            <Button variant="danger" size="sm" icon={Trash2} onClick={() => setBulkDeleteConfirm(true)}>Delete</Button>
+            {isTrashView ? (
+              <>
+                <Button variant="secondary" size="sm" icon={RotateCcw} onClick={handleBulkRestore}>Restore</Button>
+                <Button variant="danger" size="sm" icon={Trash2} onClick={() => setBulkPermanentConfirm(true)}>Permanent Delete</Button>
+              </>
+            ) : (
+              <>
+                <Button variant="secondary" size="sm" icon={Move} onClick={() => setMoveConfirm(true)}>Move</Button>
+                <Button variant="danger" size="sm" icon={Trash2} onClick={() => setBulkDeleteConfirm(true)}>Delete</Button>
+              </>
+            )}
           </div>
           <button onClick={() => setSelectedIds([])} className="ml-auto text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1">
             <X size={18} />
@@ -472,17 +708,31 @@ export default function MediaPage() {
       ) : media.length === 0 ? (
         <div className="text-center py-16">
           <div className="w-20 h-20 mx-auto mb-6 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-            <FolderOpen size={36} className="text-gray-400 dark:text-gray-500" />
+            {isTrashView ? (
+              <Trash2 size={36} className="text-gray-400 dark:text-gray-500" />
+            ) : isUnusedView ? (
+              <CheckCircle size={36} className="text-green-400 dark:text-green-500" />
+            ) : (
+              <FolderOpen size={36} className="text-gray-400 dark:text-gray-500" />
+            )}
           </div>
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
-            {debouncedSearch || formatFilter || folderFilter ? 'No files found' : 'No media yet'}
+            {isTrashView
+              ? 'Trash is empty'
+              : isUnusedView
+                ? 'No unused files'
+                : debouncedSearch || formatFilter || folderFilter ? 'No files found' : 'No media yet'}
           </h3>
           <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">
-            {debouncedSearch || formatFilter || folderFilter
-              ? 'Try adjusting your search or filters.'
-              : 'Upload your first file to get started.'}
+            {isTrashView
+              ? 'Deleted files will appear here for 30 days before being permanently removed.'
+              : isUnusedView
+                ? 'All uploaded images are currently in use.'
+                : debouncedSearch || formatFilter || folderFilter
+                  ? 'Try adjusting your search or filters.'
+                  : 'Upload your first file to get started.'}
           </p>
-          {!debouncedSearch && !formatFilter && !folderFilter && (
+          {!isTrashView && !isUnusedView && !debouncedSearch && !formatFilter && !folderFilter && (
             <Button variant="primary" icon={Upload} onClick={() => fileInputRef.current?.click()} style={{ backgroundColor: accentColor }}>
               Upload Files
             </Button>
@@ -517,15 +767,22 @@ export default function MediaPage() {
                       className="w-4 h-4 rounded border-gray-300 text-accent focus:ring-accent cursor-pointer"
                     />
                   </div>
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleCopyUrl(item.secureUrl || item.url); }}
-                      className="w-7 h-7 bg-black/50 hover:bg-black/70 rounded-md flex items-center justify-center text-white transition-colors"
-                      title="Copy URL"
-                    >
-                      <Copy size={12} />
-                    </button>
-                  </div>
+                  {item.originalFormat && item.originalFormat !== item.format && (
+                    <div className="absolute top-2 right-2">
+                      <Badge variant="success" size="sm">{item.originalFormat.toUpperCase()}→{item.format.toUpperCase()}</Badge>
+                    </div>
+                  )}
+                  {!isTrashView && (
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1" style={item.originalFormat ? { top: '2.5rem' } : {}}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleCopyUrl(item.secureUrl || item.url); }}
+                        className="w-7 h-7 bg-black/50 hover:bg-black/70 rounded-md flex items-center justify-center text-white transition-colors"
+                        title="Copy URL"
+                      >
+                        <Copy size={12} />
+                      </button>
+                    </div>
+                  )}
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
                     <p className="text-white text-xs font-medium truncate">{item.fileName}</p>
                   </div>
@@ -534,6 +791,9 @@ export default function MediaPage() {
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{formatFileSize(item.fileSize)} &middot; {item.format?.toUpperCase()}</p>
                   {item.width && item.height && (
                     <p className="text-xs text-gray-400 dark:text-gray-500">{item.width}×{item.height}</p>
+                  )}
+                  {isTrashView && item.deletedAt && (
+                    <p className="text-xs text-orange-500 dark:text-orange-400 mt-1">Deleted {formatDateShort(item.deletedAt)}</p>
                   )}
                 </div>
               </div>
@@ -558,8 +818,8 @@ export default function MediaPage() {
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Name</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Format</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Size</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Folder</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Uploaded</th>
+                  {!isTrashView && <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Folder</th>}
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">{isTrashView ? 'Deleted' : 'Uploaded'}</th>
                   <th className="text-right px-4 py-3 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Actions</th>
                 </tr>
               </thead>
@@ -579,7 +839,7 @@ export default function MediaPage() {
                       <td className="px-4 py-3">
                         <div className="w-10 h-10 rounded-md overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                           {IMAGE_FORMATS.includes(item.format) ? (
-                            <img src={item.url} alt="" className="w-full h-full object-cover" />
+                            <img src={item.url} alt="" className="w-full h-full object-cover" loading="lazy" />
                           ) : (
                             <FormatIcon size={18} className="text-gray-400" />
                           )}
@@ -594,23 +854,40 @@ export default function MediaPage() {
                       <td className="px-4 py-3">
                         <span className="text-sm text-gray-500 dark:text-gray-400">{formatFileSize(item.fileSize)}</span>
                       </td>
+                      {!isTrashView && (
+                        <td className="px-4 py-3">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">{item.folder}</span>
+                        </td>
+                      )}
                       <td className="px-4 py-3">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">{item.folder}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">{formatDateShort(item.createdAt)}</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          {isTrashView ? formatDateShort(item.deletedAt) : formatDateShort(item.createdAt)}
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => handleCopyUrl(item.secureUrl || item.url)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors" title="Copy URL">
-                            <Copy size={14} className="text-gray-400" />
-                          </button>
-                          <button onClick={() => { setEditingItem(item); setEditForm({ altText: item.altText || '', caption: item.caption || '', fileName: item.fileName, folder: item.folder }); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors" title="Edit">
-                            <Edit2 size={14} className="text-gray-400" />
-                          </button>
-                          <button onClick={() => setDeleteConfirm({ open: true, item })} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors" title="Delete">
-                            <Trash2 size={14} className="text-red-400" />
-                          </button>
+                          {!isTrashView ? (
+                            <>
+                              <button onClick={() => handleCopyUrl(item.secureUrl || item.url)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors" title="Copy URL">
+                                <Copy size={14} className="text-gray-400" />
+                              </button>
+                              <button onClick={() => { setEditingItem(item); setEditForm({ altText: item.altText || '', caption: item.caption || '', fileName: item.fileName, folder: item.folder }); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors" title="Edit">
+                                <Edit2 size={14} className="text-gray-400" />
+                              </button>
+                              <button onClick={() => setDeleteConfirm({ open: true, item, permanent: false })} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors" title="Delete">
+                                <Trash2 size={14} className="text-red-400" />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button onClick={() => setRestoreConfirm({ open: true, item })} className="p-1.5 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-md transition-colors" title="Restore">
+                                <RotateCcw size={14} className="text-green-500" />
+                              </button>
+                              <button onClick={() => setDeleteConfirm({ open: true, item, permanent: true })} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors" title="Permanent Delete">
+                                <Trash2 size={14} className="text-red-500" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -675,17 +952,31 @@ export default function MediaPage() {
 
               <div className="space-y-4">
                 <div>
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">File Name</p>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Original Filename</p>
+                  <p className="text-sm text-gray-800 dark:text-white">{detailItem.originalName}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Current Filename</p>
                   <p className="text-sm text-gray-800 dark:text-white">{detailItem.fileName}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Format</p>
-                    <Badge variant="default" size="sm">{detailItem.format?.toUpperCase()}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="default" size="sm">{detailItem.format?.toUpperCase()}</Badge>
+                      {detailItem.originalFormat && detailItem.originalFormat !== detailItem.format && (
+                        <Badge variant="info" size="sm">from {detailItem.originalFormat.toUpperCase()}</Badge>
+                      )}
+                    </div>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Size</p>
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">File Size</p>
                     <p className="text-sm text-gray-800 dark:text-white">{formatFileSize(detailItem.fileSize)}</p>
+                    {detailItem.originalFileSize && detailItem.originalFileSize !== detailItem.fileSize && (
+                      <p className="text-xs text-green-600 dark:text-green-400">
+                        Saved {formatFileSize(detailItem.originalFileSize - detailItem.fileSize)} ({Math.round(((detailItem.originalFileSize - detailItem.fileSize) / detailItem.originalFileSize) * 100)}%)
+                      </p>
+                    )}
                   </div>
                 </div>
                 {detailItem.width && detailItem.height && (
@@ -737,12 +1028,25 @@ export default function MediaPage() {
               )}
 
               <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <Button variant="secondary" size="sm" icon={Edit2} onClick={() => { setEditingItem(detailItem); setEditForm({ altText: detailItem.altText || '', caption: detailItem.caption || '', fileName: detailItem.fileName, folder: detailItem.folder }); }} className="flex-1">
-                  Edit
-                </Button>
-                <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteConfirm({ open: true, item: detailItem })} className="flex-1">
-                  Delete
-                </Button>
+                {isTrashView ? (
+                  <>
+                    <Button variant="primary" size="sm" icon={RotateCcw} onClick={() => setRestoreConfirm({ open: true, item: detailItem })} className="flex-1" style={{ backgroundColor: accentColor }}>
+                      Restore
+                    </Button>
+                    <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteConfirm({ open: true, item: detailItem, permanent: true })} className="flex-1">
+                      Permanent Delete
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="secondary" size="sm" icon={Edit2} onClick={() => { setEditingItem(detailItem); setEditForm({ altText: detailItem.altText || '', caption: detailItem.caption || '', fileName: detailItem.fileName, folder: detailItem.folder }); }} className="flex-1">
+                      Edit
+                    </Button>
+                    <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteConfirm({ open: true, item: detailItem, permanent: false })} className="flex-1">
+                      Delete
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -751,11 +1055,13 @@ export default function MediaPage() {
 
       <ConfirmDialog
         isOpen={deleteConfirm.open}
-        onClose={() => setDeleteConfirm({ open: false, item: null })}
-        onConfirm={() => handleDelete(deleteConfirm.item)}
-        title="Delete File"
-        message={`Are you sure you want to delete "${deleteConfirm.item?.fileName || ''}"? This will also remove it from Cloudinary.`}
-        confirmText="Delete"
+        onClose={() => setDeleteConfirm({ open: false, item: null, permanent: false })}
+        onConfirm={() => handleDelete(deleteConfirm.item, deleteConfirm.permanent)}
+        title={deleteConfirm.permanent ? 'Permanently Delete File' : 'Delete File'}
+        message={deleteConfirm.permanent
+          ? `This action will permanently delete "${deleteConfirm.item?.fileName || ''}" from both the CMS and Cloudinary. This action cannot be undone.`
+          : `Are you sure you want to delete "${deleteConfirm.item?.fileName || ''}"? It will be moved to trash and permanently deleted after 30 days.`}
+        confirmText={deleteConfirm.permanent ? 'Permanently Delete' : 'Move to Trash'}
         cancelText="Cancel"
         type="danger"
       />
@@ -765,8 +1071,41 @@ export default function MediaPage() {
         onClose={() => setBulkDeleteConfirm(false)}
         onConfirm={handleBulkDelete}
         title="Delete Files"
-        message={`Are you sure you want to delete ${selectedIds.length} file${selectedIds.length !== 1 ? 's' : ''}? This will also remove them from Cloudinary.`}
-        confirmText="Delete All"
+        message={`Are you sure you want to delete ${selectedIds.length} file${selectedIds.length !== 1 ? 's' : ''}? They will be moved to trash.`}
+        confirmText="Move to Trash"
+        cancelText="Cancel"
+        type="danger"
+      />
+
+      <ConfirmDialog
+        isOpen={bulkPermanentConfirm}
+        onClose={() => setBulkPermanentConfirm(false)}
+        onConfirm={handleBulkPermanentDelete}
+        title="Permanently Delete Files"
+        message={`This action will permanently delete ${selectedIds.length} file${selectedIds.length !== 1 ? 's' : ''} from both the CMS and Cloudinary. This action cannot be undone.`}
+        confirmText="Permanently Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
+
+      <ConfirmDialog
+        isOpen={restoreConfirm.open}
+        onClose={() => setRestoreConfirm({ open: false, item: null })}
+        onConfirm={() => handleRestore(restoreConfirm.item)}
+        title="Restore File"
+        message={`Are you sure you want to restore "${restoreConfirm.item?.fileName || ''}"? It will be moved back to the Media Library.`}
+        confirmText="Restore"
+        cancelText="Cancel"
+        type="default"
+      />
+
+      <ConfirmDialog
+        isOpen={deleteAllUnusedConfirm}
+        onClose={() => setDeleteAllUnusedConfirm(false)}
+        onConfirm={handleDeleteAllUnused}
+        title="Delete All Unused Files"
+        message="This will move all unused images to Trash. They will be permanently deleted after 30 days. This action can be reversed by restoring from Trash."
+        confirmText="Move All Unused to Trash"
         cancelText="Cancel"
         type="danger"
       />

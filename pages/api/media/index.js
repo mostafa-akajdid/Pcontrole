@@ -25,7 +25,32 @@ async function handleGet(req, res) {
   try {
     const { page, perPage } = parsePagination(req.query);
     const search = parseSearch(req.query);
-    const { format, folder, sort, order } = req.query;
+    const { format, folder, sort, order, trash, unused } = req.query;
+
+    if (trash === 'true') {
+      const result = await MediaService.findAll({
+        page,
+        perPage,
+        search,
+        format: format || '',
+        folder: folder || '',
+        sort: sort || 'createdAt',
+        order: order || 'desc',
+        onlyDeleted: true,
+      });
+
+      const pagination = buildPagination(result.total, page, perPage);
+      return paginatedResponse(res, result.media, pagination);
+    }
+
+    if (unused === 'true') {
+      const unusedItems = await MediaService.findUnused();
+      const start = (page - 1) * perPage;
+      const paginatedItems = unusedItems.slice(start, start + perPage);
+
+      const pagination = buildPagination(unusedItems.length, page, perPage);
+      return paginatedResponse(res, paginatedItems, pagination);
+    }
 
     const result = await MediaService.findAll({
       page,

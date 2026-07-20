@@ -293,7 +293,9 @@ model Media {
   width          Int?
   height         Int?
   format         String
+  originalFormat String?
   fileSize       Int
+  originalFileSize Int?
   mimeType       String
   altText        String?
   caption        String?

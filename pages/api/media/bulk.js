@@ -16,12 +16,20 @@ export default async function handler(req, res) {
 
   try {
     const user = await UserService.findById(tokenPayload.userId);
-    const requiredPerm = ['delete', 'restore'].includes(req.body.action)
-      ? 'media.delete'
-      : 'media.update';
+    const { action } = req.body;
 
-    if (!user.permissions?.includes(requiredPerm)) {
-      return forbiddenResponse(res, `Insufficient permissions to ${req.body.action} media`);
+    if (action === 'permanentDelete') {
+      if (!user.permissions?.includes('media.delete')) {
+        return forbiddenResponse(res, 'Insufficient permissions to permanently delete media');
+      }
+    } else if (['delete', 'restore'].includes(action)) {
+      if (!user.permissions?.includes('media.delete')) {
+        return forbiddenResponse(res, `Insufficient permissions to ${action} media`);
+      }
+    } else {
+      if (!user.permissions?.includes('media.update')) {
+        return forbiddenResponse(res, `Insufficient permissions to ${action} media`);
+      }
     }
 
     const validation = validateRequest(mediaBulkActionSchema, req.body);
@@ -29,12 +37,12 @@ export default async function handler(req, res) {
       return errorResponse(res, 'Validation failed', 400, validation.errors);
     }
 
-    const { ids, action, folder, metadata } = validation.data;
-    const result = await MediaService.bulkAction({ ids, action, folder, metadata: metadata }, extractRequestMetadata(req, tokenPayload.userId));
+    const { ids, action: validatedAction, folder, metadata } = validation.data;
+    const result = await MediaService.bulkAction({ ids, action: validatedAction, folder, metadata: metadata }, extractRequestMetadata(req, tokenPayload.userId));
 
     await ActivityService.log({
       userId: tokenPayload.userId,
-      action: action.toUpperCase(),
+      action: validatedAction.toUpperCase(),
       entityType: 'Media',
       entityId: ids.join(','),
       details: { count: result.count, ids, folder, metadata },

@@ -203,7 +203,7 @@ export default function Help() {
             </div>
             <div>
               <p className="font-semibold text-gray-800 dark:text-gray-200">Call Us</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">+1 234 567 890</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">+21276254011</p>
             </div>
           </a>
 

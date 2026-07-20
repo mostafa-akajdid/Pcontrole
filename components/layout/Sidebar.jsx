@@ -148,7 +148,7 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
           </div>
         </div>
 
-        <div 
+        {/* <div 
           className="mt-6 relative overflow-hidden rounded-3xl p-6 text-white shadow-xl min-h-[270px]"
           style={{ 
             background: `linear-gradient(135deg, ${accentColor}dd 0%, ${accentColor} 50%, ${accentColor}cc 100%)`
@@ -175,7 +175,7 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
               Download
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
     </aside>
   );
