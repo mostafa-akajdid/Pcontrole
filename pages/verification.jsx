@@ -98,7 +98,7 @@ export default function Verification() {
   return (
     <>
       <Head>
-        <title>Verify Email - Taskily</title>
+        <title>Vérification - PIOLEC CMS</title>
         <meta name="description" content="Verify your email address" />
       </Head>
 
@@ -109,7 +109,7 @@ export default function Verification() {
             <div className="w-10 h-10 rounded-full border-4 flex items-center justify-center" style={{ borderColor: accentColor }}>
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: accentColor }}></div>
             </div>
-            <span className="text-2xl font-bold text-gray-800 dark:text-white">Taskily</span>
+            <span className="text-2xl font-bold text-gray-800 dark:text-white">PIOLEC CMS</span>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-700">

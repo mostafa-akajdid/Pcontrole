@@ -164,7 +164,7 @@ export default function Help() {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <a 
-            href="mailto:support@taskily.com" 
+            href="mailto:support@piolec.com" 
             className="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg transition-all group"
             style={{ 
               '--hover-border-color': accentColor 
@@ -184,7 +184,7 @@ export default function Help() {
             </div>
             <div>
               <p className="font-semibold text-gray-800 dark:text-gray-200">Email Us</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">support@taskily.com</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">support@piolec.com</p>
             </div>
           </a>
 

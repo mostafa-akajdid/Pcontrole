@@ -3,8 +3,8 @@ import { Users } from 'lucide-react';
 import { useAppearance } from '@/contexts/AppearanceContext';
 
 const ROLE_COLORS = [
-  '#0f4c3a', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6',
-  '#10b981', '#ec4899', '#06b6d4', '#f97316', '#6366f1',
+  '#224b82', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6',
+  '#4F75AB', '#ec4899', '#06b6d4', '#f97316', '#6366f1',
 ];
 
 export default function RoleDistributionChart({ data }) {

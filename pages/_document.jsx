@@ -10,7 +10,7 @@ const themeScript = `
     } else if (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       root.classList.add('dark');
     }
-    var accentColor = localStorage.getItem('accentColor') || '#0f4c3a';
+    var accentColor = localStorage.getItem('accentColor') || '#224b82';
     root.style.setProperty('--accent-color', accentColor);
   } catch(e) {}
 })();

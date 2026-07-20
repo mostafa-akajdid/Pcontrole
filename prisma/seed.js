@@ -88,7 +88,7 @@ const ROLES = [
 
 const DEFAULT_SETTINGS = [
   // General
-  { key: 'siteName', value: 'TASKILY', group: 'general', type: 'text', description: 'The name of your site' },
+  { key: 'siteName', value: 'PIOLEC', group: 'general', type: 'text', description: 'The name of your site' },
   { key: 'siteDescription', value: 'Project Management Dashboard', group: 'general', type: 'textarea', description: 'A brief description of your site' },
   { key: 'defaultLanguage', value: 'en', group: 'general', type: 'select', description: 'Default language for the CMS' },
   { key: 'timezone', value: 'UTC', group: 'general', type: 'select', description: 'Default timezone' },
@@ -102,7 +102,7 @@ const DEFAULT_SETTINGS = [
   { key: 'defaultPlaceholderImage', value: '', group: 'branding', type: 'image', description: 'Fallback image when no image is set' },
 
   // SEO
-  { key: 'defaultSeoTitle', value: 'TASKILY - Project Management CMS', group: 'seo', type: 'text', description: 'Default meta title for pages' },
+  { key: 'defaultSeoTitle', value: 'PIOLEC - Gestion de projets', group: 'seo', type: 'text', description: 'Default meta title for pages' },
   { key: 'defaultSeoDescription', value: 'Professional project management dashboard', group: 'seo', type: 'textarea', description: 'Default meta description for pages' },
   { key: 'defaultOgImage', value: '', group: 'seo', type: 'image', description: 'Default Open Graph image for social sharing' },
   { key: 'robots', value: 'index, follow', group: 'seo', type: 'text', description: 'Default robots directive' },
@@ -111,7 +111,7 @@ const DEFAULT_SETTINGS = [
 
   // Contact
   { key: 'companyName', value: '', group: 'contact', type: 'text', description: 'Company or organization name' },
-  { key: 'contactEmail', value: 'admin@taskily.com', group: 'contact', type: 'email', description: 'Primary contact email' },
+  { key: 'contactEmail', value: 'admin@piolec.com', group: 'contact', type: 'email', description: 'Primary contact email' },
   { key: 'contactPhone', value: '', group: 'contact', type: 'text', description: 'Contact phone number' },
   { key: 'contactAddress', value: '', group: 'contact', type: 'textarea', description: 'Physical address' },
   { key: 'googleMapsLink', value: '', group: 'contact', type: 'url', description: 'Google Maps link for your location' },
@@ -270,7 +270,7 @@ async function main() {
 
   // 4. Create default admin user
   console.log('\nCreating admin user...');
-  const adminEmail = 'admin@taskily.com';
+  const adminEmail = 'admin@piolec.com';
   const adminPassword = await bcrypt.hash('Admin123!', 12);
   
   await prisma.user.upsert({
@@ -300,7 +300,7 @@ async function main() {
 
   console.log('\n✅ Database seeded successfully!');
   console.log('\nLogin credentials:');
-  console.log('  Email: admin@taskily.com');
+    console.log('  Email: admin@piolec.com');
   console.log('  Password: Admin123!');
 }
 

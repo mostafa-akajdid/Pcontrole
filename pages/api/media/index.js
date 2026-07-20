@@ -64,7 +64,7 @@ async function handlePost(req, res, tokenPayload) {
     }
 
     const result = await CloudinaryService.uploadFromUrl(url, {
-      folder: folder ? `taskily/${folder}` : 'taskily',
+      folder: folder ? `piolec/${folder}` : 'piolec',
     });
 
     const media = await MediaService.create({

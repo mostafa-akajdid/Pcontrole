@@ -45,7 +45,7 @@ export default async function handler(req, res) {
       });
 
       const generalSettings = await SettingsService.getRawGroup('general');
-      const siteName = generalSettings.siteName || 'TASKILY';
+      const siteName = generalSettings.siteName || 'PIOLEC';
 
       await transporter.sendMail({
         from: `"${smtpSenderName || siteName}" <${smtpSenderEmail || smtpUsername}>`,

@@ -55,8 +55,8 @@ export default function Register() {
   return (
     <>
       <Head>
-        <title>Sign Up - Taskily</title>
-        <meta name="description" content="Create your Taskily account" />
+        <title>Sign Up - PIOLEC CMS</title>
+        <meta name="description" content="Créez votre compte PIOLEC" />
       </Head>
 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
@@ -79,7 +79,7 @@ export default function Register() {
           <div className="relative z-10 text-white max-w-md">
             <h2 className="text-4xl font-bold mb-4">Start your journey with us</h2>
             <p className="text-green-100 text-lg mb-8">
-              Join thousands of teams already using Taskily to streamline their workflow and boost productivity.
+              Rejoignez les équipes qui utilisent PIOLEC pour optimiser leur flux de travail.
             </p>
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
               <div className="flex items-center gap-4 mb-4">
@@ -107,7 +107,7 @@ export default function Register() {
                 </div>
               </div>
               <p className="text-sm text-green-50">
-                "Taskily has transformed how our team works. Highly recommended!"
+                "PIOLEC a transformé la façon dont notre équipe travaille. Hautement recommandé!"
               </p>
               <p className="text-xs text-green-200 mt-2">- Sarah Johnson, Product Manager</p>
             </div>
@@ -122,7 +122,7 @@ export default function Register() {
               <div className="w-10 h-10 rounded-full border-4 flex items-center justify-center" style={{ borderColor: accentColor }}>
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: accentColor }}></div>
               </div>
-              <span className="text-2xl font-bold text-gray-800 dark:text-white">Taskily</span>
+              <span className="text-2xl font-bold text-gray-800 dark:text-white">PIOLEC CMS</span>
             </div>
 
             {/* Title */}

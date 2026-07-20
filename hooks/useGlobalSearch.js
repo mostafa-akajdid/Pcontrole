@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 const DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 2;
-const RECENT_SEARCHES_KEY = 'taskily_recent_searches';
+const RECENT_SEARCHES_KEY = 'piolec_recent_searches';
 const MAX_RECENT = 8;
 
 function getRecentSearches() {

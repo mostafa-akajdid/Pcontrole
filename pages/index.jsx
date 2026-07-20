@@ -38,8 +38,8 @@ export default function Login() {
   return (
     <>
       <Head>
-        <title>Login - Taskily</title>
-        <meta name="description" content="Login to your Taskily account" />
+        <title>Login - PIOLEC CMS</title>
+        <meta name="description" content="Plateforme interne de gestion des projets PIOLEC" />
       </Head>
 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
@@ -51,7 +51,7 @@ export default function Login() {
               <div className="w-10 h-10 rounded-full border-4 flex items-center justify-center" style={{ borderColor: accentColor }}>
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: accentColor }}></div>
               </div>
-              <span className="text-2xl font-bold text-gray-800 dark:text-white">Taskily</span>
+              <span className="text-2xl font-bold text-gray-800 dark:text-white">PIOLEC CMS</span>
             </div>
 
             {/* Title */}
@@ -142,17 +142,17 @@ export default function Login() {
               </button>
 
               {/* Divider */}
-              <div className="relative my-6">
+              {/* <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
                   <span className="px-4 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400">Or continue with</span>
                 </div>
-              </div>
+              </div> */}
 
               {/* Social Login */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   className="flex items-center justify-center gap-2 py-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -174,16 +174,16 @@ export default function Login() {
                   </svg>
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Facebook</span>
                 </button>
-              </div>
+              </div> */}
             </form>
 
             {/* Sign Up Link */}
-            <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
+            {/* <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
               Don't have an account?{' '}
               <Link href="/register" className="font-medium hover:opacity-80" style={{ color: accentColor }}>
                 Sign up
               </Link>
-            </p>
+            </p> */}
           </div>
         </div>
 
@@ -205,9 +205,9 @@ export default function Login() {
           </svg>
 
           <div className="relative z-10 text-white max-w-md">
-            <h2 className="text-4xl font-bold mb-4">Manage your tasks efficiently</h2>
+            <h2 className="text-4xl font-bold mb-4">Gérez vos projets efficacement</h2>
             <p className="text-green-100 text-lg mb-8">
-              Plan, prioritize, and accomplish your tasks with ease. Track your projects and collaborate with your team.
+              Planifiez, suivez et réalisez vos projets avec facilité. Gérez vos projets et collaborez avec votre équipe.
             </p>
             <div className="space-y-4">
               <div className="flex items-center gap-3">
@@ -216,7 +216,7 @@ export default function Login() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <span>Real-time collaboration</span>
+                <span>Suivi en temps réel</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
@@ -224,7 +224,7 @@ export default function Login() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <span>Advanced analytics</span>
+                <span>Analytique avancée</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
@@ -232,7 +232,7 @@ export default function Login() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <span>Secure and reliable</span>
+                <span>Sécurisé et fiable</span>
               </div>
             </div>
           </div>

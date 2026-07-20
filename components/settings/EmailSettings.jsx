@@ -92,7 +92,7 @@ export default function EmailSettings({ data, onSave }) {
           <Input label="Password" type="password" value={form.smtpPassword} onChange={(e) => setForm({ ...form, smtpPassword: e.target.value })} placeholder="••••••••" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <Input label="Sender Name" value={form.smtpSenderName} onChange={(e) => setForm({ ...form, smtpSenderName: e.target.value })} placeholder="TASKILY" />
+          <Input label="Sender Name" value={form.smtpSenderName} onChange={(e) => setForm({ ...form, smtpSenderName: e.target.value })} placeholder="PIOLEC" />
           <Input label="Sender Email" type="email" value={form.smtpSenderEmail} onChange={(e) => setForm({ ...form, smtpSenderEmail: e.target.value })} placeholder="noreply@example.com" />
         </div>
 

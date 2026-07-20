@@ -36,7 +36,7 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
           >
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: accentColor }}></div>
           </div>
-          <span className="text-xl font-bold text-gray-800 dark:text-gray-200">Taskily</span>
+          <span className="text-xl font-bold text-gray-800 dark:text-gray-200">PIOLEC</span>
           <button className="lg:hidden ml-auto" onClick={toggleSidebar} aria-label="Close sidebar">
             <X size={20}/>
           </button>

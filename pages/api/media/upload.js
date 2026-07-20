@@ -53,13 +53,13 @@ export default async function handler(req, res) {
       const resourceType = mimeType.startsWith('video/') ? 'video' : mimeType.startsWith('image/') ? 'image' : 'raw';
 
       uploadResult = await CloudinaryService.uploadBuffer(buffer, {
-        folder: `taskily/${sanitizedFolder}`,
+        folder: `piolec/${sanitizedFolder}`,
         filename: fileName,
         resourceType,
       });
     } else if (file.startsWith('http')) {
       uploadResult = await CloudinaryService.uploadFromUrl(file, {
-        folder: `taskily/${sanitizedFolder}`,
+        folder: `piolec/${sanitizedFolder}`,
       });
     } else {
       return errorResponse(res, 'Invalid file format. Send a data URI or URL.', 400);

@@ -3,7 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --accent-color: #0f4c3a;
+  --accent-color: #224b82;
+  /* --accent-color: #0f4c3a; */
 }
 
 * {

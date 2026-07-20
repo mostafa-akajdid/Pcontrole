@@ -88,7 +88,7 @@ export default function SettingsPage() {
   ];
 
   return (
-    <DashboardLayout title="Settings - TASKILY" description="System configuration center">
+    <DashboardLayout title="Settings - PIOLEC CMS" description="System configuration center">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-1">Settings</h1>
         <p className="text-gray-500 text-sm">Manage your account and system configuration</p>

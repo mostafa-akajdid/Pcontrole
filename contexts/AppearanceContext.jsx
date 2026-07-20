@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo } 
 const AppearanceContext = createContext();
 
 const DEFAULT_THEME = 'light';
-const DEFAULT_ACCENT_COLOR = '#0f4c3a';
+const DEFAULT_ACCENT_COLOR = '#224b82';
 
 function applyThemeClass(newTheme) {
   document.documentElement.classList.remove('dark');
