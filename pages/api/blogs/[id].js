@@ -2,6 +2,7 @@ import { BlogService, ActivityService, UserService } from '@/lib/services';
 import { getUserFromRequest } from '@/lib/auth';
 import { validateRequest, updateBlogSchema } from '@/lib/validation';
 import { successResponse, errorResponse, methodNotAllowed, unauthorizedResponse, notFoundResponse, forbiddenResponse, extractRequestMetadata } from '@/lib/api';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 export default async function handler(req, res) {
   const tokenPayload = getUserFromRequest(req);
@@ -50,8 +51,15 @@ async function handlePut(req, res, id, tokenPayload) {
       return errorResponse(res, 'Validation failed', 400, validation.errors);
     }
 
+    const sanitizedData = {
+      ...validation.data,
+      content: validation.data.content !== undefined
+        ? (validation.data.content ? sanitizeHtml(validation.data.content) : validation.data.content)
+        : undefined,
+    };
+
     const oldBlog = await BlogService.findByIdOrThrow(id);
-    const blog = await BlogService.update(id, validation.data, extractRequestMetadata(req, tokenPayload.userId));
+    const blog = await BlogService.update(id, sanitizedData, extractRequestMetadata(req, tokenPayload.userId));
 
     const changes = [];
     if (validation.data.title && validation.data.title !== oldBlog.title) changes.push('title');

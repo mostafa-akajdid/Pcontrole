@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-import { X, Settings, FileText, Image, Search, Plus, Trash2, GripVertical, Info, Upload } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { X, Settings, FileText, Image, Search, Plus, Trash2, GripVertical, Upload } from 'lucide-react';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
+import BlogEditor from '@/components/ui/BlogEditor';
 import MediaPicker from '@/components/modals/MediaPicker';
 import { useAppearance } from '@/contexts/AppearanceContext';
 import { slugify } from '@/lib/utils';
@@ -41,12 +42,14 @@ export default function BlogFormModal({
 }) {
   const { accentColor } = useAppearance();
 
+  const editorRef = useRef(null);
   const [activeTab, setActiveTab] = useState('general');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [showCoverPicker, setShowCoverPicker] = useState(false);
   const [showGalleryPicker, setShowGalleryPicker] = useState(false);
+  const [showEditorMediaPicker, setShowEditorMediaPicker] = useState(false);
 
   const [form, setForm] = useState({ ...defaultFormState });
 
@@ -216,6 +219,15 @@ export default function BlogFormModal({
       }));
     }
     setShowGalleryPicker(false);
+  };
+
+  const handleEditorMediaSelect = (media) => {
+    if (media && editorRef.current) {
+      const url = media.url || media.secureUrl;
+      const alt = media.altText || media.fileName || 'Image';
+      editorRef.current.insertContent(`<img src="${url}" alt="${alt}" />`);
+    }
+    setShowEditorMediaPicker(false);
   };
 
   const toggleCategory = (categoryId) => {
@@ -396,21 +408,15 @@ export default function BlogFormModal({
               )}
 
               {activeTab === 'content' && (
-                <div className="space-y-6">
-                  <div>
-                    <Textarea
-                      label="Content"
-                      value={form.content}
-                      onChange={(e) => updateForm('content', e.target.value)}
-                      placeholder="Write your blog post content..."
-                      rows={16}
-                      className="min-h-[400px]"
-                    />
-                    <div className="mt-2 flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
-                      <Info size={14} />
-                      <span>Rich text editor (TinyMCE) will be integrated in a future update.</span>
-                    </div>
-                  </div>
+                <div className="space-y-4">
+                  <BlogEditor
+                    ref={editorRef}
+                    value={form.content}
+                    onChange={(content) => updateForm('content', content)}
+                    placeholder="Write your blog post content..."
+                    onOpenMediaLibrary={() => setShowEditorMediaPicker(true)}
+                    minHeight={500}
+                  />
                 </div>
               )}
 
@@ -690,6 +696,13 @@ export default function BlogFormModal({
         onSelect={handleGallerySelect}
         multiple={true}
         title="Choose Gallery Images"
+      />
+      <MediaPicker
+        isOpen={showEditorMediaPicker}
+        onClose={() => setShowEditorMediaPicker(false)}
+        onSelect={handleEditorMediaSelect}
+        multiple={false}
+        title="Insert from Media Library"
       />
     </>
   );

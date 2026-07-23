@@ -3,6 +3,7 @@ import { getUserFromRequest } from '@/lib/auth';
 import { validateRequest, createBlogSchema } from '@/lib/validation';
 import { parsePagination, buildPagination, parseSearch } from '@/lib/pagination';
 import { successResponse, errorResponse, methodNotAllowed, unauthorizedResponse, forbiddenResponse, paginatedResponse, extractRequestMetadata } from '@/lib/api';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 export default async function handler(req, res) {
   const tokenPayload = getUserFromRequest(req);
@@ -58,8 +59,13 @@ async function handlePost(req, res, tokenPayload) {
       return errorResponse(res, 'Validation failed', 400, validation.errors);
     }
 
-    const blog = await BlogService.create({
+    const sanitizedData = {
       ...validation.data,
+      content: validation.data.content ? sanitizeHtml(validation.data.content) : validation.data.content,
+    };
+
+    const blog = await BlogService.create({
+      ...sanitizedData,
       authorId: tokenPayload.userId,
     }, extractRequestMetadata(req, tokenPayload.userId));
 

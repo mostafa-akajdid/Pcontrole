@@ -1,8 +1,33 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { X, Calendar, User, Globe, Tag, FileText } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import { useModalAnimation } from '@/hooks/useModalAnimation';
 import { formatDateShort, getCategoryName } from '@/lib/utils';
+
+function sanitizeForDisplay(html) {
+  if (!html) return '';
+  if (typeof window === 'undefined') return html;
+  try {
+    const DOMPurify = require('dompurify');
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: [
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'hr', 'pre', 'blockquote',
+        'ul', 'ol', 'li', 'a', 'img', 'figure', 'figcaption',
+        'table', 'thead', 'tbody', 'tr', 'th', 'td',
+        'strong', 'em', 'b', 'i', 'u', 's', 'code', 'div', 'span', 'section',
+        'input', 'label',
+      ],
+      ALLOWED_ATTR: [
+        'href', 'target', 'rel', 'title', 'alt', 'src', 'width', 'height',
+        'class', 'style', 'colspan', 'rowspan', 'data-type', 'data-checked',
+        'type', 'checked', 'disabled',
+      ],
+      ADD_ATTR: ['target'],
+    });
+  } catch {
+    return html;
+  }
+}
 
 export default function BlogDetailModal({ isOpen, onClose, blog }) {
   const { isClosing, handleClose, shouldRender } = useModalAnimation(isOpen, { delay: 400, onClose });
@@ -21,6 +46,12 @@ export default function BlogDetailModal({ isOpen, onClose, blog }) {
 
   if (!shouldRender) return null;
   if (!blog) return null;
+
+  const safeContent = useMemo(
+    () => (blog.content ? sanitizeForDisplay(blog.content) : ''),
+    [blog.content]
+  );
+  const isHtmlContent = safeContent && /<[a-z][\s\S]*>/i.test(safeContent);
 
   return (
     <>
@@ -80,9 +111,16 @@ export default function BlogDetailModal({ isOpen, onClose, blog }) {
                 <FileText size={16} className="text-gray-500 dark:text-gray-400" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Content</span>
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap leading-relaxed line-clamp-12">
-                {blog.content}
-              </div>
+              {isHtmlContent ? (
+                <div
+                  className="prose prose-sm dark:prose-invert max-w-none text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-12 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-gray-300 dark:[&_th]:border-gray-600 [&_th]:p-2 [&_td]:border [&_td]:border-gray-300 dark:[&_td]:border-gray-600 [&_td]:p-2 [&_a]:text-blue-600 dark:[&_a]:text-blue-400 [&_blockquote]:border-l-4 [&_blockquote]:border-blue-500 [&_blockquote]:pl-4 [&_blockquote]:italic"
+                  dangerouslySetInnerHTML={{ __html: safeContent }}
+                />
+              ) : (
+                <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap leading-relaxed line-clamp-12">
+                  {blog.content}
+                </div>
+              )}
             </div>
           )}
 

@@ -1,4 +1,5 @@
 import '@/styles/globals.css';
+import '@/components/ui/BlogEditor/styles.css';
 import '@/lib/patchFetchCsrf';
 import { AppearanceProvider } from '@/contexts/AppearanceContext';
 import { AuthProvider } from '@/contexts/AuthContext';
